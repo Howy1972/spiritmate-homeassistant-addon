@@ -1,0 +1,2 @@
+#!/bin/sh
+echo "SpiritMate MYOB Sync placeholder" > /share/myobsync.txt

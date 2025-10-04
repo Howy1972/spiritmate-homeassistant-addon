@@ -1,0 +1,40 @@
+configuration:
+  imap_host:
+    name: IMAP host
+    description: Mail server host (e.g. imap.gmail.com)
+  imap_port:
+    name: IMAP port
+    description: Usually 993
+  imap_user:
+    name: IMAP username
+    description: Email account login
+  imap_pass:
+    name: IMAP password
+    description: Email account password or app password
+  imap_mailbox:
+    name: Mailbox
+    description: Mailbox/folder to read from (default INBOX)
+  from_exact:
+    name: Sender filter
+    description: Exact sender email to match (e.g. invoices@myob.com)
+  subject_prefix:
+    name: Subject prefix
+    description: Subject must start with this (e.g. Invoice)
+  label_processed:
+    name: Processed label
+    description: Optional label/folder to copy processed messages to
+  firestore_project_id:
+    name: Firestore project id
+    description: Your Firebase/Firestore project id
+  schedule_enabled:
+    name: Enable schedule
+    description: Run on a cron schedule
+  schedule_cron:
+    name: Cron expression
+    description: e.g. 0 2 * * *
+  log_level:
+    name: Log level
+    description: debug, info, warning, or error
+
+title: SpiritMate MYOB Sync
+description: Sync MYOB invoice emails to SpiritMate inventory

@@ -1,0 +1,66 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# SpiritMate MYOB Sync - service runner
+# ==============================================================================
+
+# Read configuration from add-on options
+IMAP_HOST=$(bashio::config 'imap_host')
+IMAP_PORT=$(bashio::config 'imap_port')
+IMAP_USER=$(bashio::config 'imap_user')
+IMAP_PASS=$(bashio::config 'imap_pass')
+IMAP_MAILBOX=$(bashio::config 'imap_mailbox')
+
+FROM_EXACT=$(bashio::config 'from_exact')
+SUBJECT_PREFIX=$(bashio::config 'subject_prefix')
+LABEL_PROCESSED=$(bashio::config 'label_processed')
+
+FIRESTORE_PROJECT_ID=$(bashio::config 'firestore_project_id')
+GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json
+
+SCHEDULE_ENABLED=$(bashio::config 'schedule_enabled')
+SCHEDULE_CRON=$(bashio::config 'schedule_cron')
+LOG_LEVEL=$(bashio::config 'log_level')
+
+# Validate required configuration
+if bashio::var.is_empty "${IMAP_HOST}" || \
+   bashio::var.is_empty "${IMAP_PORT}" || \
+   bashio::var.is_empty "${IMAP_USER}" || \
+   bashio::var.is_empty "${IMAP_PASS}" || \
+   bashio::var.is_empty "${FROM_EXACT}" || \
+   bashio::var.is_empty "${SUBJECT_PREFIX}"; then
+  bashio::log.error "Missing required IMAP/email settings. Please configure imap_* and email filters."
+  exit 1
+fi
+
+# Check Firestore credentials
+if [[ ! -f "/share/spiritmate/service-account.json" ]]; then
+  bashio::log.error "Firebase service account not found at /share/spiritmate/service-account.json"
+  exit 1
+fi
+
+# Copy credentials where Node can read them
+cp /share/spiritmate/service-account.json /app/service-account.json
+
+# Export environment for the Node worker
+export IMAP_HOST IMAP_PORT IMAP_USER IMAP_PASS IMAP_MAILBOX
+export FROM_EXACT SUBJECT_PREFIX LABEL_PROCESSED
+export FIRESTORE_PROJECT_ID GOOGLE_APPLICATION_CREDENTIALS
+export LOG_LEVEL
+
+bashio::log.info "Starting MYOB sync worker"
+bashio::log.info "IMAP: ${IMAP_USER}@${IMAP_HOST}:${IMAP_PORT}/${IMAP_MAILBOX:=INBOX}"
+bashio::log.info "Schedule enabled: ${SCHEDULE_ENABLED} (${SCHEDULE_CRON})"
+
+# Start ingress/status/upload server
+PORT=8099 node /app/dist/server.js &
+
+if [[ "${SCHEDULE_ENABLED}" == "true" ]]; then
+  echo "${SCHEDULE_CRON} cd /app && node dist/index.js" > /etc/crontabs/root
+  crond -f &
+  while true; do
+    sleep 300
+    pgrep crond >/dev/null || crond -f &
+  done
+else
+  exec node /app/dist/index.js
+fi
