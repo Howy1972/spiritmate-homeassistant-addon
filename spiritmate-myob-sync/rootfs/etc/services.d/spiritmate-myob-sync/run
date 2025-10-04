@@ -62,5 +62,9 @@ if [[ "${SCHEDULE_ENABLED}" == "true" ]]; then
     pgrep crond >/dev/null || crond -f &
   done
 else
-  exec node /app/dist/index.js
+  bashio::log.info "Schedule disabled. UI is available; you can trigger runs from the panel. Running worker once now and keeping service alive."
+  node /app/dist/index.js || bashio::log.warning "Initial run exited with code $?"
+  while true; do
+    sleep 3600
+  done
 fi
