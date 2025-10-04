@@ -34,8 +34,10 @@ You can upload the file from the add-on panel:
 Example using curl (from within your network):
 
 ```bash
-curl -F "file=@service-account.json" http://HOME_ASSISTANT_URL/ingress/EXAMPLE_PATH/api/upload-service-account
+curl -F "file=@service-account.json" http://homeassistant.local:8123/api/hassio_ingress/<addon_token>/api/upload-service-account
 ```
+
+Or simply use the web UI at the add-on panel.
 
 ## Scheduling
 
@@ -72,9 +74,14 @@ If you set `label_processed`, the add-on will copy matched emails to that folder
 - GET `/api/status` returns a simple status payload.
 - POST `/api/run` triggers a one-off sync with current configuration and returns a summary.
 
-Example curl:
+Example curl (access via the add-on's ingress URL):
 
 ```bash
-curl http://HOME_ASSISTANT_URL/ingress/EXAMPLE_PATH/api/status
-curl -X POST http://HOME_ASSISTANT_URL/ingress/EXAMPLE_PATH/api/run
+# Check status
+curl http://homeassistant.local:8123/api/hassio_ingress/<addon_token>/api/status
+
+# Trigger manual sync
+curl -X POST http://homeassistant.local:8123/api/hassio_ingress/<addon_token>/api/run
 ```
+
+Note: The ingress token is managed by Home Assistant. Use the web UI panel for easiest access.
