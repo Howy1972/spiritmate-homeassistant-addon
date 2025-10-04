@@ -104,7 +104,8 @@ app.get('/api/status', (_req, res) => {
   res.json({ ok: true, time: new Date().toISOString() });
 });
 
-app.post('/api/upload-service-account', upload.single('file'), async (req, res) => {
+// Use any for req to avoid requiring @types/multer augmentation
+app.post('/api/upload-service-account', upload.single('file'), async (req: any, res) => {
   try {
     if (!req.file) return res.status(400).json({ ok: false, error: 'No file uploaded' });
     const shareDir = '/share/spiritmate';
