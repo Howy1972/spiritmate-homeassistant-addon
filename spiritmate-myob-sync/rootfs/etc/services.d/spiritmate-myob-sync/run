@@ -32,10 +32,17 @@ if bashio::var.is_empty "${IMAP_HOST}" || \
   exit 1
 fi
 
-# Check Firestore credentials
+# Start ingress/status/upload server early so user can upload creds if missing
+PORT=8099 node /app/dist/server.js &
+
+# Check Firestore credentials (wait for upload if missing)
 if [[ ! -f "/share/spiritmate/service-account.json" ]]; then
-  bashio::log.error "Firebase service account not found at /share/spiritmate/service-account.json"
-  exit 1
+  bashio::log.warning "Firebase service account not found at /share/spiritmate/service-account.json"
+  bashio::log.warning "Open Web UI and upload service-account.json; waiting..."
+  while [[ ! -f "/share/spiritmate/service-account.json" ]]; do
+    sleep 5
+  done
+  bashio::log.info "service-account.json detected. Continuing startup..."
 fi
 
 # Copy credentials where Node can read them
@@ -51,8 +58,7 @@ bashio::log.info "Starting MYOB sync worker"
 bashio::log.info "IMAP: ${IMAP_USER}@${IMAP_HOST}:${IMAP_PORT}/${IMAP_MAILBOX:=INBOX}"
 bashio::log.info "Schedule enabled: ${SCHEDULE_ENABLED} (${SCHEDULE_CRON})"
 
-# Start ingress/status/upload server
-PORT=8099 node /app/dist/server.js &
+# Server already started above
 
 if [[ "${SCHEDULE_ENABLED}" == "true" ]]; then
   echo "${SCHEDULE_CRON} cd /app && node dist/index.js" > /etc/crontabs/root
