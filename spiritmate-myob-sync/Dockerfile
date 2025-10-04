@@ -32,3 +32,8 @@ RUN npm run build && npm prune --omit=dev
 
 # Copy root filesystem
 COPY rootfs /
+
+# Ensure service scripts are executable (Windows checkouts can drop exec bit)
+RUN chmod a+x /etc/services.d/spiritmate-myob-sync/run \
+    && chmod a+x /etc/services.d/spiritmate-myob-sync/finish \
+    && chmod a+x /usr/bin/my_program || true
