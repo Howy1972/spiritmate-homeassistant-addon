@@ -22,12 +22,13 @@ WORKDIR /app
 
 # Copy worker package files and install deps first (cache layer)
 COPY worker/package*.json ./
-RUN npm ci --only=production
+# Install with dev deps for build, we'll prune later
+RUN npm install --no-audit --no-fund
 
 # Copy worker sources and build
 COPY worker/tsconfig.json ./
 COPY worker/src ./src
-RUN npm run build
+RUN npm run build && npm prune --omit=dev
 
 # Copy root filesystem
 COPY rootfs /
