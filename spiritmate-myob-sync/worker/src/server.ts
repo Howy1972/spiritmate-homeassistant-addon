@@ -159,7 +159,7 @@ app.post('/api/upload-service-account', upload.single('file'), async (req: any, 
     if (!fs.existsSync(shareDir)) fs.mkdirSync(shareDir, { recursive: true });
     const dest = path.join(shareDir, 'service-account.json');
     // validate JSON
-    try { JSON.parse(req.file.buffer.toString('utf-8')); } catch (e) { return res.status(400).json({ ok:false, error:'Invalid JSON: ' + e.message }); }
+    try { JSON.parse(req.file.buffer.toString('utf-8')); } catch (e) { return res.status(400).json({ ok:false, error:'Invalid JSON: ' + ((e as any)?.message || String(e)) }); }
     fs.writeFileSync(dest, req.file.buffer);
     return res.json({ ok: true, path: dest });
   } catch (e) {
