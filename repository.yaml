@@ -1,4 +1,4 @@
 # https://developers.home-assistant.io/docs/add-ons/repository#repository-configuration
-name: Example Home Assistant add-on repository
-url: 'https://github.com/home-assistant/addons-example'
+name: SpiritMate Home Assistant Add-ons
+url: 'https://github.com/Howy1972/spiritmate-homeassistant-addon'
 maintainer: Awesome Maintainer <awesome@example.com>
