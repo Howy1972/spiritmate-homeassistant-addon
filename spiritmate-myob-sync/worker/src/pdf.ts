@@ -1,4 +1,6 @@
-import * as pdfParse from 'pdf-parse';
+// pdf-parse has no types in our env; declare module in-place
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pdfParse = require('pdf-parse');
 import { ParsedInvoice, ParsedInvoiceItem } from './types';
 
 export function extractInvoiceNumber(text: string): string | undefined {

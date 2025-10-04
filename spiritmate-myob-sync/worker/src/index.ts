@@ -51,10 +51,10 @@ export async function runWorker(): Promise<{ emails: number; invoices: number; p
   const startTime = new Date();
   console.log(`MYOB Sync Worker started at ${startTime.toISOString()}`);
 
-  let config: WorkerConfig;
-  let emailClient: EmailClient;
-  let firestoreClient: FirestoreClient;
-  let syncRunId: string;
+  let config!: WorkerConfig;
+  let emailClient: EmailClient | undefined;
+  let firestoreClient: FirestoreClient | undefined;
+  let syncRunId: string | undefined;
 
   try {
     config = loadConfig();

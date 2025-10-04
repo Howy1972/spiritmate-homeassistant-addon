@@ -1,5 +1,7 @@
 import express from 'express';
-import multer from 'multer';
+// multer types are optional in our build environment
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const multer = require('multer');
 import fs from 'fs';
 import path from 'path';
 import { runWorker } from './index';

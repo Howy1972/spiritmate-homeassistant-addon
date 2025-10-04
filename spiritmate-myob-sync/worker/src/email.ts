@@ -35,11 +35,12 @@ export class EmailClient {
 
       const uids = await this.client.search(searchCriteria);
       const results: EmailMessage[] = [];
-      if (!uids || uids === false) return results;
+      if (uids === false || uids.length === 0) return results;
 
       for (const uid of uids) {
-        const message = await this.client.fetchOne(uid, { envelope: true, bodyStructure: true });
-        if (!message?.envelope) continue;
+        const message = await this.client.fetchOne(uid, { envelope: true, bodyStructure: true } as any);
+        if (message === false) continue;
+        if (!message.envelope) continue;
 
         const fromAddress = message.envelope.from?.[0]?.address?.toLowerCase() || '';
         if (fromAddress !== this.config.email.fromExact.toLowerCase()) continue;
@@ -68,8 +69,8 @@ export class EmailClient {
     const message = await this.client.fetchOne(uid, { bodyStructure: true, source: true } as any);
     const attachments: EmailAttachment[] = [];
 
-    if (message?.bodyStructure?.childNodes) {
-      for (const part of message.bodyStructure.childNodes) {
+    if (message !== false && (message as any)?.bodyStructure?.childNodes) {
+      for (const part of (message as any).bodyStructure.childNodes) {
         if (part.disposition === 'attachment' && part.dispositionParameters?.filename) {
           const dl: any = await this.client.download(uid, part.part);
           let buffer: Buffer;
