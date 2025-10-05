@@ -44,22 +44,24 @@ app.get('/', (_req, res) => {
     }
     
     .header {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: linear-gradient(135deg, #c9a96e 0%, #b8956a 100%);
       padding: 30px;
       border-radius: 16px;
       margin-bottom: 30px;
-      box-shadow: 0 10px 40px rgba(16, 185, 129, 0.2);
+      box-shadow: 0 10px 40px rgba(201, 169, 110, 0.3);
     }
     
     .header h1 {
       font-size: 32px;
       font-weight: 700;
       margin-bottom: 8px;
+      color: #1a1f2e;
     }
     
     .header p {
-      opacity: 0.9;
+      opacity: 0.85;
       font-size: 16px;
+      color: #2d3748;
     }
     
     .status-bar {
@@ -76,6 +78,12 @@ app.get('/', (_req, res) => {
       border: 1px solid #374151;
       border-radius: 12px;
       padding: 20px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .status-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     }
     
     .status-label {
@@ -92,7 +100,7 @@ app.get('/', (_req, res) => {
     }
     
     .status-value.ready {
-      color: #10b981;
+      color: #c9a96e;
     }
     
     .status-value.error {
@@ -100,7 +108,7 @@ app.get('/', (_req, res) => {
     }
     
     .status-value.pending {
-      color: #f59e0b;
+      color: #d4b896;
     }
     
     .grid {
@@ -125,7 +133,7 @@ app.get('/', (_req, res) => {
     .card h2 {
       font-size: 20px;
       margin-bottom: 15px;
-      color: #10b981;
+      color: #c9a96e;
     }
     
     .card p {
@@ -166,8 +174,13 @@ app.get('/', (_req, res) => {
     }
     
     .btn-primary {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
+      background: linear-gradient(135deg, #c9a96e 0%, #b8956a 100%);
+      color: #1a1f2e;
+      font-weight: 700;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #d4b896 0%, #c9a96e 100%);
     }
     
     .btn-secondary {
@@ -175,9 +188,19 @@ app.get('/', (_req, res) => {
       color: #e5e7eb;
     }
     
-    .btn-danger {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      color: white;
+    .btn-secondary:hover:not(:disabled) {
+      background: #4b5563;
+    }
+    
+    .btn-logs {
+      background: #2d3748;
+      color: #d4b896;
+      border: 1px solid #4b5563;
+    }
+    
+    .btn-logs:hover:not(:disabled) {
+      background: #374151;
+      border-color: #c9a96e;
     }
     
     .alert {
@@ -200,9 +223,9 @@ app.get('/', (_req, res) => {
     }
     
     .alert-success {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid #10b981;
-      color: #10b981;
+      background: rgba(201, 169, 110, 0.15);
+      border: 1px solid #c9a96e;
+      color: #d4b896;
     }
     
     .alert-error {
@@ -212,9 +235,25 @@ app.get('/', (_req, res) => {
     }
     
     .alert-info {
-      background: rgba(59, 130, 246, 0.15);
-      border: 1px solid #3b82f6;
-      color: #3b82f6;
+      background: rgba(212, 184, 150, 0.15);
+      border: 1px solid #d4b896;
+      color: #d4b896;
+    }
+    
+    .log-section {
+      margin-top: 30px;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+    }
+    
+    .log-section.collapsed {
+      max-height: 0;
+      opacity: 0;
+    }
+    
+    .log-section.expanded {
+      max-height: 500px;
+      opacity: 1;
     }
     
     .log-container {
@@ -235,37 +274,21 @@ app.get('/', (_req, res) => {
     }
     
     .log-timestamp {
-      color: #6366f1;
+      color: #c9a96e;
       font-weight: 600;
     }
     
     .spinner {
       width: 16px;
       height: 16px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top-color: white;
+      border: 2px solid rgba(26, 31, 46, 0.3);
+      border-top-color: #1a1f2e;
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
     }
     
     @keyframes spin {
       to { transform: rotate(360deg); }
-    }
-    
-    .info-box {
-      background: #0f1419;
-      border: 1px solid #374151;
-      border-radius: 8px;
-      padding: 15px;
-      margin-top: 15px;
-    }
-    
-    .info-box code {
-      background: #1f2937;
-      padding: 3px 8px;
-      border-radius: 4px;
-      color: #10b981;
-      font-size: 12px;
     }
     
     .info-row {
@@ -318,7 +341,7 @@ app.get('/', (_req, res) => {
     input:focus,
     select:focus {
       outline: none;
-      border-color: #10b981;
+      border-color: #c9a96e;
     }
     
     .toggle-switch {
@@ -359,7 +382,7 @@ app.get('/', (_req, res) => {
     }
     
     input:checked + .toggle-slider {
-      background-color: #10b981;
+      background-color: #c9a96e;
     }
     
     input:checked + .toggle-slider:before {
@@ -378,13 +401,22 @@ app.get('/', (_req, res) => {
     }
     
     .config-note {
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid #3b82f6;
+      background: rgba(212, 184, 150, 0.1);
+      border: 1px solid #c9a96e;
       border-radius: 8px;
       padding: 12px;
       font-size: 13px;
-      color: #93c5fd;
+      color: #d4b896;
       margin-top: 15px;
+    }
+    
+    .chevron {
+      transition: transform 0.3s ease;
+      display: inline-block;
+    }
+    
+    .chevron.rotated {
+      transform: rotate(180deg);
     }
   </style>
 </head>
@@ -428,9 +460,14 @@ app.get('/', (_req, res) => {
           <span>🔄</span>
           <span>Refresh Status</span>
         </button>
+        <button id="toggleLogsBtn" class="btn-logs" style="margin-top: 10px;">
+          <span>📋</span>
+          <span>View Logs</span>
+          <span class="chevron">▼</span>
+        </button>
       </div>
 
-  <div class="card">
+      <div class="card">
         <h2>📊 Sync Statistics</h2>
         <div id="statsContainer">
           <div class="info-row">
@@ -465,61 +502,47 @@ app.get('/', (_req, res) => {
           <div class="form-hint">Turn on to run sync automatically on a schedule</div>
         </div>
 
-        <div id="scheduleOptions" style="display: none;">
-          <div class="flex-row">
-            <div class="form-group">
-              <label class="form-label" for="startTime">Start Time</label>
-              <input type="time" id="startTime" value="08:00">
-              <div class="form-hint">Daily sync start time</div>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label" for="endTime">End Time</label>
-              <input type="time" id="endTime" value="18:00">
-              <div class="form-hint">Daily sync end time</div>
-            </div>
-          </div>
-
+        <div class="flex-row">
           <div class="form-group">
-            <label class="form-label" for="syncInterval">Sync Interval (minutes)</label>
-            <select id="syncInterval">
-              <option value="15">Every 15 minutes</option>
-              <option value="30" selected>Every 30 minutes</option>
-              <option value="60">Every hour</option>
-              <option value="120">Every 2 hours</option>
-              <option value="180">Every 3 hours</option>
-              <option value="360">Every 6 hours</option>
-            </select>
-            <div class="form-hint">How often to check for new invoices during active hours</div>
+            <label class="form-label" for="startTime">Start Time</label>
+            <input type="time" id="startTime" value="08:00">
+            <div class="form-hint">Daily sync start time</div>
           </div>
-
-          <button id="saveScheduleBtn" class="btn-primary">
-            <span>💾</span>
-            <span>Save Schedule</span>
-          </button>
+          
+          <div class="form-group">
+            <label class="form-label" for="endTime">End Time</label>
+            <input type="time" id="endTime" value="18:00">
+            <div class="form-hint">Daily sync end time</div>
+          </div>
         </div>
+
+        <div class="form-group">
+          <label class="form-label" for="syncInterval">Sync Interval (minutes)</label>
+          <select id="syncInterval">
+            <option value="15">Every 15 minutes</option>
+            <option value="30" selected>Every 30 minutes</option>
+            <option value="60">Every hour</option>
+            <option value="120">Every 2 hours</option>
+            <option value="180">Every 3 hours</option>
+            <option value="360">Every 6 hours</option>
+          </select>
+          <div class="form-hint">How often to check for new invoices during active hours</div>
+        </div>
+
+        <button id="saveScheduleBtn" class="btn-primary">
+          <span>💾</span>
+          <span>Save Schedule</span>
+        </button>
 
         <div class="config-note">
           <strong>Note:</strong> Schedule settings are stored in the add-on configuration. 
           For advanced cron schedules, edit the configuration YAML directly in Home Assistant.
         </div>
       </div>
+    </div>
 
-      <div class="card full-width">
-        <h2>ℹ️ Configuration Guide</h2>
-        <p><strong>Credentials:</strong> Place your Firebase <code>service-account.json</code> file via Samba/SSH at:</p>
-        <div class="info-box">
-          <code>/share/spiritmate/service-account.json</code>
-        </div>
-        <p style="margin-top: 15px;"><strong>IMAP & Email Settings:</strong> Configure in the add-on Configuration tab:</p>
-        <div class="info-box">
-          <div style="margin-bottom: 8px;">• IMAP server, port, username, password</div>
-          <div style="margin-bottom: 8px;">• Email filters (from address, subject prefix)</div>
-          <div>• Firestore project ID</div>
-        </div>
-      </div>
-
-      <div class="card full-width">
+    <div id="logSection" class="log-section collapsed">
+      <div class="card full-width" style="margin-top: 0;">
         <h2>📋 Activity Log</h2>
         <div id="logContainer" class="log-container">
           <div class="log-entry">
@@ -537,18 +560,21 @@ app.get('/', (_req, res) => {
     const lastUpdate = document.getElementById('lastUpdate');
     const alertContainer = document.getElementById('alertContainer');
     const logContainer = document.getElementById('logContainer');
+    const logSection = document.getElementById('logSection');
     const runSyncBtn = document.getElementById('runSyncBtn');
     const refreshBtn = document.getElementById('refreshBtn');
+    const toggleLogsBtn = document.getElementById('toggleLogsBtn');
     const emailCount = document.getElementById('emailCount');
     const lastSync = document.getElementById('lastSync');
     const nextSync = document.getElementById('nextSync');
     
     const scheduleEnabled = document.getElementById('scheduleEnabled');
-    const scheduleOptions = document.getElementById('scheduleOptions');
     const saveScheduleBtn = document.getElementById('saveScheduleBtn');
     const startTime = document.getElementById('startTime');
     const endTime = document.getElementById('endTime');
     const syncInterval = document.getElementById('syncInterval');
+
+    let logsExpanded = false;
 
     function showAlert(type, message) {
       const alert = document.createElement('div');
@@ -571,8 +597,17 @@ app.get('/', (_req, res) => {
       logContainer.scrollTop = logContainer.scrollHeight;
     }
 
-    scheduleEnabled.addEventListener('change', () => {
-      scheduleOptions.style.display = scheduleEnabled.checked ? 'block' : 'none';
+    toggleLogsBtn.addEventListener('click', () => {
+      logsExpanded = !logsExpanded;
+      if (logsExpanded) {
+        logSection.classList.remove('collapsed');
+        logSection.classList.add('expanded');
+        toggleLogsBtn.querySelector('.chevron').classList.add('rotated');
+      } else {
+        logSection.classList.remove('expanded');
+        logSection.classList.add('collapsed');
+        toggleLogsBtn.querySelector('.chevron').classList.remove('rotated');
+      }
     });
 
     async function checkStatus() {
@@ -606,7 +641,6 @@ app.get('/', (_req, res) => {
         // Load schedule config
         if (data.schedule) {
           scheduleEnabled.checked = data.schedule.enabled || false;
-          scheduleOptions.style.display = scheduleEnabled.checked ? 'block' : 'none';
           if (data.schedule.startTime) startTime.value = data.schedule.startTime;
           if (data.schedule.endTime) endTime.value = data.schedule.endTime;
           if (data.schedule.interval) syncInterval.value = data.schedule.interval;
@@ -624,6 +658,11 @@ app.get('/', (_req, res) => {
       runSyncBtn.disabled = true;
       runSyncBtn.innerHTML = '<div class="spinner"></div><span>Running...</span>';
       addLog('Starting manual sync operation...');
+      
+      // Auto-expand logs when sync starts
+      if (!logsExpanded) {
+        toggleLogsBtn.click();
+      }
       
       try {
         const response = await fetch('api/run', { method: 'POST' });
