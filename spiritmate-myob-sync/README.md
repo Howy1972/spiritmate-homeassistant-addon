@@ -1,15 +1,20 @@
-# SpiritMate MYOB Sync Add-on (v1.0.0)
+# SpiritMate MYOB Sync Add-on (v2.0.3)
 
 Home Assistant add-on that syncs MYOB invoice emails into SpiritMate inventory via Firestore.
 
-Features:
-- IMAP support (Gmail, Office365, generic IMAP)
-- PDF parsing of MYOB invoices
-- Firestore writes to `productStocks`, movement records, idempotent processed invoices
-- Optional schedule with cron
-- Ingress upload for Firebase `service-account.json`, status endpoint, run-now trigger
+## Features:
+- **IMAP Support**: Gmail, Office365, or any generic IMAP provider
+- **Intelligent PDF Parsing**: Handles complex MYOB invoice formats with multi-product lines
+- **Firestore Integration**: Updates `productStocks`, movement records, and idempotent processed invoices
+- **Modern Web UI**: 
+  - Real-time system status dashboard
+  - Schedule configuration (toggle, start/end times, intervals)
+  - Activity log with live updates
+  - One-click manual sync
+- **Flexible Scheduling**: Configure active hours and sync intervals
+- **Credential Management**: Simple file placement via Samba/SSH
 
-See `DOCS.md` for configuration and setup details.
+See `DOCS.md` for detailed configuration and setup instructions.
 
 [aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg

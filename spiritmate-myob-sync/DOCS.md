@@ -22,22 +22,12 @@ Set all fields in the add-on Configuration tab:
 ## Firestore Credentials
 
 Place your Firebase service account JSON at: `/share/spiritmate/service-account.json`.
-The add-on copies it to `/app/service-account.json` and sets `GOOGLE_APPLICATION_CREDENTIALS` automatically.
+The add-on copies it to `/app/service-account.json` automatically.
 
-### Upload via Ingress
-
-You can upload the file from the add-on panel:
-
-- POST `/api/upload-service-account` with form field `file` (multipart)
-- The add-on stores it at `/share/spiritmate/service-account.json`
-
-Example using curl (from within your network):
-
-```bash
-curl -F "file=@service-account.json" http://homeassistant.local:8123/api/hassio_ingress/<addon_token>/api/upload-service-account
-```
-
-Or simply use the web UI at the add-on panel.
+**How to upload:**
+- Use Samba share to access `/share/spiritmate/` directory
+- Or use SSH/terminal to copy the file directly
+- The web UI will show credential status once the file is in place
 
 ## Scheduling
 
@@ -68,20 +58,24 @@ Or simply use the web UI at the add-on panel.
 
 If you set `label_processed`, the add-on will copy matched emails to that folder/label after successful processing, while leaving the original in `INBOX`. If your server does not support label creation, pre-create the folder.
 
-## Ingress and Status API
+## Web Interface
 
-- Ingress UI is enabled. The server listens on port 8099.
-- GET `/api/status` returns a simple status payload.
-- POST `/api/run` triggers a one-off sync with current configuration and returns a summary.
+The add-on provides a modern web interface accessible from the Home Assistant UI:
 
-Example curl (access via the add-on's ingress URL):
+### Features:
+- **System Status Dashboard**: Real-time status of credentials, schedule, and last sync
+- **Quick Actions**: Run manual sync or refresh status with one click
+- **Schedule Configuration**: 
+  - Toggle automatic sync on/off
+  - Set start and end times for active sync hours
+  - Configure sync interval (15 min to 6 hours)
+- **Activity Log**: Real-time log of sync operations and system events
+- **Configuration Guide**: Step-by-step instructions for setup
 
-```bash
-# Check status
-curl http://homeassistant.local:8123/api/hassio_ingress/<addon_token>/api/status
+### API Endpoints:
+- `GET /api/status` - Returns system status and configuration
+- `POST /api/run` - Triggers manual sync operation
+- `POST /api/schedule` - Updates schedule configuration (note: for persistent changes, update via HA config)
 
-# Trigger manual sync
-curl -X POST http://homeassistant.local:8123/api/hassio_ingress/<addon_token>/api/run
-```
-
-Note: The ingress token is managed by Home Assistant. Use the web UI panel for easiest access.
+### Schedule Configuration:
+The web UI provides convenient controls for scheduling, but for persistent configuration changes, update the add-on's Configuration tab in Home Assistant. The UI schedule controls are helpful for testing and quick adjustments.
