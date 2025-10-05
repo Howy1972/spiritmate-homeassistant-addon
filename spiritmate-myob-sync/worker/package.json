@@ -22,7 +22,8 @@
   },
   "devDependencies": {
     "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "@types/node-fetch": "^2.6.11"
   },
   "engines": {
     "node": ">=18.0.0"
