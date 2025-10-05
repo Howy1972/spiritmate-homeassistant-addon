@@ -886,11 +886,30 @@ app.get('/api/status', (_req, res) => {
     
     // Read schedule config from environment or config file
     const scheduleEnabled = process.env.SCHEDULE_ENABLED === 'true';
+    const scheduleCron = process.env.SCHEDULE_CRON || '0 2 * * *';
+    
+    // Parse cron expression back to interval
+    let interval = 30; // default
+    if (scheduleCron === '*/15 * * * *') {
+      interval = 15;
+    } else if (scheduleCron === '*/30 * * * *') {
+      interval = 30;
+    } else if (scheduleCron === '0 * * * *') {
+      interval = 60;
+    } else if (scheduleCron === '0 */2 * * *') {
+      interval = 120;
+    } else if (scheduleCron === '0 */3 * * *') {
+      interval = 180;
+    } else if (scheduleCron === '0 */6 * * *') {
+      interval = 360;
+    }
+    
     const scheduleConfig = {
       enabled: scheduleEnabled,
-      startTime: process.env.SCHEDULE_START_TIME || '08:00',
-      endTime: process.env.SCHEDULE_END_TIME || '18:00',
-      interval: parseInt(process.env.SCHEDULE_INTERVAL || '30', 10)
+      startTime: '08:00',
+      endTime: '18:00',
+      interval: interval,
+      cron: scheduleCron
     };
     
     const response = {
