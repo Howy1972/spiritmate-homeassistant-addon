@@ -392,7 +392,7 @@ app.get('/', (_req, res) => {
 
     async function checkStatus() {
       try {
-        const response = await fetch('/api/status');
+        const response = await fetch('api/status');
         const data = await response.json();
         
         lastUpdate.textContent = new Date().toLocaleTimeString();
@@ -423,7 +423,7 @@ app.get('/', (_req, res) => {
       addLog('Starting manual sync operation...');
       
       try {
-        const response = await fetch('/api/run', { method: 'POST' });
+        const response = await fetch('api/run', { method: 'POST' });
         const data = await response.json();
         
         if (data.ok) {
