@@ -460,17 +460,30 @@ app.get('/', (_req, res) => {
 // API: Check system status
 app.get('/api/status', (_req, res) => {
   try {
-    const hasCredentials = fs.existsSync('/share/spiritmate/service-account.json');
-    res.json({
+    // Only check if file exists - DO NOT read or parse it
+    let hasCredentials = false;
+    try {
+      const stats = fs.statSync('/share/spiritmate/service-account.json');
+      hasCredentials = stats.isFile() && stats.size > 0;
+    } catch {
+      hasCredentials = false;
+    }
+    
+    const response = {
       ok: true,
-      hasCredentials,
+      hasCredentials: hasCredentials,
       time: new Date().toISOString()
-    });
+    };
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).send(JSON.stringify(response));
   } catch (error) {
-    res.status(500).json({
+    const errorResponse = {
       ok: false,
       error: String(error)
-    });
+    };
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).send(JSON.stringify(errorResponse));
   }
 });
 
