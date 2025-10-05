@@ -887,6 +887,8 @@ app.get('/api/status', (_req, res) => {
     // Read schedule config from environment
     const scheduleEnabled = process.env.SCHEDULE_ENABLED === 'true';
     const scheduleCron = process.env.SCHEDULE_CRON || '0 2 * * *';
+    
+    // Read actual saved values from environment (these are the source of truth)
     const startTime = process.env.SCHEDULE_START_TIME || '08:00';
     const endTime = process.env.SCHEDULE_END_TIME || '18:00';
     const interval = parseInt(process.env.SCHEDULE_INTERVAL || '30', 10);
