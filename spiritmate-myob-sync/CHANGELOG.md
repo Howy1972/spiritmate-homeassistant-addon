@@ -1,6 +1,6 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
-## 2.5.3
+## 2.5.5
 
 - Fixed JSON parsing error when saving schedule configuration by sending response before triggering restart
 
