@@ -3,6 +3,16 @@ import fs from 'fs';
 import { runWorker } from './index';
 
 const app = express();
+
+// Trust proxy headers from Home Assistant ingress
+app.set('trust proxy', true);
+
+// Log all requests for debugging
+app.use((req, _res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 app.use(express.json());
 
 // Main UI
