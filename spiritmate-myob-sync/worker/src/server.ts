@@ -153,8 +153,7 @@ app.get('/', (_req, res) => {
     uploadForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const file = fileInput.files[0];
-      if (!file) {
+      if (!fileInput.files || !fileInput.files[0]) {
         showAlert('error', 'Please select a file');
         return;
       }
@@ -163,8 +162,7 @@ app.get('/', (_req, res) => {
       uploadBtn.innerHTML = '<span class="spinner"></span> Uploading…';
       
       try {
-        const fd = new FormData();
-        fd.append('file', file);
+        const fd = new FormData(uploadForm);
         
         const res = await fetch('/api/upload-service-account', { method: 'POST', body: fd });
         const data = await res.json();
@@ -229,14 +227,42 @@ app.get('/api/status', (_req, res) => {
 
 app.post('/api/upload-service-account', upload.single('file'), async (req: any, res) => {
   try {
-    if (!req.file) return res.status(400).json({ ok: false, error: 'No file uploaded' });
+    console.log('[upload] Request received');
+    console.log('[upload] Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('[upload] File present:', !!req.file);
+    
+    if (!req.file) {
+      console.error('[upload] No file in request');
+      return res.status(400).json({ ok: false, error: 'No file uploaded' });
+    }
+    
+    console.log('[upload] File details:', {
+      fieldname: req.file.fieldname,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      bufferLength: req.file.buffer.length
+    });
+    
     const shareDir = '/share/spiritmate';
-    if (!fs.existsSync(shareDir)) fs.mkdirSync(shareDir, { recursive: true });
+    if (!fs.existsSync(shareDir)) {
+      console.log('[upload] Creating directory:', shareDir);
+      fs.mkdirSync(shareDir, { recursive: true });
+    }
+    
     const dest = path.join(shareDir, 'service-account.json');
+    console.log('[upload] Writing to:', dest);
+    
     // Write raw buffer directly - no validation (Firebase SDK will validate)
     fs.writeFileSync(dest, req.file.buffer);
+    
+    console.log('[upload] File written successfully');
+    console.log('[upload] File exists:', fs.existsSync(dest));
+    console.log('[upload] File size on disk:', fs.statSync(dest).size);
+    
     return res.json({ ok: true, path: dest });
   } catch (e) {
+    console.error('[upload] Error:', e);
     return res.status(500).json({ ok: false, error: String(e) });
   }
 });
