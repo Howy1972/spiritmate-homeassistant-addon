@@ -913,7 +913,7 @@ app.post('/api/schedule', async (req, res) => {
     const response = await fetch(supervisorUrl, {
       method: 'POST',
       headers: {
-        'Authorization': \`Bearer \${supervisorToken}\`,
+        'Authorization': 'Bearer ' + supervisorToken,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ options: currentOptions })
@@ -921,7 +921,7 @@ app.post('/api/schedule', async (req, res) => {
     
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(\`Supervisor API error: \${response.status} - \${errorText}\`);
+      throw new Error('Supervisor API error: ' + response.status + ' - ' + errorText);
     }
     
     const result = await response.json();
