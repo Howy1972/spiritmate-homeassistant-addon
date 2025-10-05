@@ -233,9 +233,7 @@ app.post('/api/upload-service-account', upload.single('file'), async (req: any, 
     const shareDir = '/share/spiritmate';
     if (!fs.existsSync(shareDir)) fs.mkdirSync(shareDir, { recursive: true });
     const dest = path.join(shareDir, 'service-account.json');
-    // validate JSON (strip BOM/whitespace)
-    const text = req.file.buffer.toString('utf-8').replace(/^\uFEFF/, '').trim();
-    try { JSON.parse(text); } catch (e) { return res.status(400).json({ ok:false, error:'Invalid JSON: ' + ((e as any)?.message || String(e)) }); }
+    // Write raw buffer directly - no validation (Firebase SDK will validate)
     fs.writeFileSync(dest, req.file.buffer);
     return res.json({ ok: true, path: dest });
   } catch (e) {
