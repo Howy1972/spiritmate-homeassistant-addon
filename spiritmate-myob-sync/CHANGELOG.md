@@ -1,5 +1,9 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 2.5.3
+
+- Fixed JSON parsing error when saving schedule configuration by sending response before triggering restart
+
 ## 2.5.2
 
 - Fixed scheduler settings reverting after 10 seconds due to auto-refresh overwriting unsaved changes

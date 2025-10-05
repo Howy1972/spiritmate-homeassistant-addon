@@ -1,27 +1,27 @@
-import express from 'express';
-import fs from 'fs';
-import { runWorker } from './index';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import fetch from 'node-fetch';
-
-const execAsync = promisify(exec);
-const app = express();
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const fs_1 = __importDefault(require("fs"));
+const index_1 = require("./index");
+const child_process_1 = require("child_process");
+const util_1 = require("util");
+const node_fetch_1 = __importDefault(require("node-fetch"));
+const execAsync = (0, util_1.promisify)(child_process_1.exec);
+const app = (0, express_1.default)();
 // Trust proxy headers from Home Assistant ingress
 app.set('trust proxy', true);
-
 // Log all requests for debugging
 app.use((req, _res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
 });
-
-app.use(express.json());
-
+app.use(express_1.default.json());
 // Main UI
 app.get('/', (_req, res) => {
-  res.set('Content-Type', 'text/html').send(`<!DOCTYPE html>
+    res.set('Content-Type', 'text/html').send(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -989,191 +989,177 @@ app.get('/', (_req, res) => {
 </body>
 </html>`);
 });
-
 // API: Check system status
 app.get('/api/status', (_req, res) => {
-  try {
-    // Check if credentials file exists
-    let hasCredentials = false;
     try {
-      const stats = fs.statSync('/share/spiritmate/service-account.json');
-      hasCredentials = stats.isFile() && stats.size > 0;
-    } catch {
-      hasCredentials = false;
+        // Check if credentials file exists
+        let hasCredentials = false;
+        try {
+            const stats = fs_1.default.statSync('/share/spiritmate/service-account.json');
+            hasCredentials = stats.isFile() && stats.size > 0;
+        }
+        catch {
+            hasCredentials = false;
+        }
+        // Read schedule config from environment
+        const scheduleEnabled = process.env.SCHEDULE_ENABLED === 'true';
+        const scheduleCron = process.env.SCHEDULE_CRON || '0 2 * * *';
+        // Read actual saved values from environment (these are the source of truth)
+        const startTime = process.env.SCHEDULE_START_TIME || '08:00';
+        const endTime = process.env.SCHEDULE_END_TIME || '18:00';
+        const interval = parseInt(process.env.SCHEDULE_INTERVAL || '30', 10);
+        const scheduleConfig = {
+            enabled: scheduleEnabled,
+            startTime: startTime,
+            endTime: endTime,
+            interval: interval,
+            cron: scheduleCron
+        };
+        const response = {
+            ok: true,
+            hasCredentials: hasCredentials,
+            scheduleEnabled: scheduleEnabled,
+            schedule: scheduleConfig,
+            time: new Date().toISOString()
+        };
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).send(JSON.stringify(response));
     }
-    
-    // Read schedule config from environment
-    const scheduleEnabled = process.env.SCHEDULE_ENABLED === 'true';
-    const scheduleCron = process.env.SCHEDULE_CRON || '0 2 * * *';
-    
-    // Read actual saved values from environment (these are the source of truth)
-    const startTime = process.env.SCHEDULE_START_TIME || '08:00';
-    const endTime = process.env.SCHEDULE_END_TIME || '18:00';
-    const interval = parseInt(process.env.SCHEDULE_INTERVAL || '30', 10);
-    
-    const scheduleConfig = {
-      enabled: scheduleEnabled,
-      startTime: startTime,
-      endTime: endTime,
-      interval: interval,
-      cron: scheduleCron
-    };
-    
-    const response = {
-      ok: true,
-      hasCredentials: hasCredentials,
-      scheduleEnabled: scheduleEnabled,
-      schedule: scheduleConfig,
-      time: new Date().toISOString()
-    };
-    
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).send(JSON.stringify(response));
-  } catch (error) {
-    const errorResponse = {
-      ok: false,
-      error: String(error)
-    };
-    res.setHeader('Content-Type', 'application/json');
-    res.status(500).send(JSON.stringify(errorResponse));
-  }
+    catch (error) {
+        const errorResponse = {
+            ok: false,
+            error: String(error)
+        };
+        res.setHeader('Content-Type', 'application/json');
+        res.status(500).send(JSON.stringify(errorResponse));
+    }
 });
-
 // API: Run manual sync
 app.post('/api/run', async (_req, res) => {
-  try {
-    console.log('[API] Manual sync triggered');
-    const result = await runWorker();
-    console.log('[API] Sync completed:', JSON.stringify(result));
-    res.json({ ok: true, result });
-  } catch (error) {
-    console.error('[API] Sync failed:', error);
-    res.status(500).json({ ok: false, error: String(error) });
-  }
+    try {
+        console.log('[API] Manual sync triggered');
+        const result = await (0, index_1.runWorker)();
+        console.log('[API] Sync completed:', JSON.stringify(result));
+        res.json({ ok: true, result });
+    }
+    catch (error) {
+        console.error('[API] Sync failed:', error);
+        res.status(500).json({ ok: false, error: String(error) });
+    }
 });
-
 // API: Save schedule configuration
 app.post('/api/schedule', async (req, res) => {
-  try {
-    console.log('[API] Schedule config update:', req.body);
-    const { enabled, startTime, endTime, interval } = req.body;
-    
-    // Parse start/end times
-    const startHour = parseInt(startTime.split(':')[0], 10);
-    const endHour = parseInt(endTime.split(':')[0], 10);
-    
-    // Generate cron expression based on interval and time window
-    let cronExpression = '0 2 * * *'; // Default: 2 AM daily
-    
-    if (enabled && interval) {
-      // Generate cron that respects time window
-      if (interval < 60) {
-        // Sub-hourly: use minute-based cron with hour restriction
-        const minuteInterval = interval;
-        const hourRange = startHour + '-' + (endHour - 1);
-        cronExpression = '*/' + minuteInterval + ' ' + hourRange + ' * * *';
-      } else {
-        // Hourly or more: generate hour-based cron
-        const hourInterval = Math.floor(interval / 60);
-        const hours = [];
-        for (let h = startHour; h < endHour; h += hourInterval) {
-          hours.push(h);
+    try {
+        console.log('[API] Schedule config update:', req.body);
+        const { enabled, startTime, endTime, interval } = req.body;
+        // Parse start/end times
+        const startHour = parseInt(startTime.split(':')[0], 10);
+        const endHour = parseInt(endTime.split(':')[0], 10);
+        // Generate cron expression based on interval and time window
+        let cronExpression = '0 2 * * *'; // Default: 2 AM daily
+        if (enabled && interval) {
+            // Generate cron that respects time window
+            if (interval < 60) {
+                // Sub-hourly: use minute-based cron with hour restriction
+                const minuteInterval = interval;
+                const hourRange = startHour + '-' + (endHour - 1);
+                cronExpression = '*/' + minuteInterval + ' ' + hourRange + ' * * *';
+            }
+            else {
+                // Hourly or more: generate hour-based cron
+                const hourInterval = Math.floor(interval / 60);
+                const hours = [];
+                for (let h = startHour; h < endHour; h += hourInterval) {
+                    hours.push(h);
+                }
+                if (hours.length > 0) {
+                    cronExpression = '0 ' + hours.join(',') + ' * * *';
+                }
+                else {
+                    // Fallback if interval is too large
+                    cronExpression = '0 ' + startHour + ' * * *';
+                }
+            }
         }
-        if (hours.length > 0) {
-          cronExpression = '0 ' + hours.join(',') + ' * * *';
-        } else {
-          // Fallback if interval is too large
-          cronExpression = '0 ' + startHour + ' * * *';
+        // Get current add-on options from environment
+        const currentOptions = {
+            imap_host: process.env.IMAP_HOST || '',
+            imap_port: parseInt(process.env.IMAP_PORT || '993', 10),
+            imap_user: process.env.IMAP_USER || '',
+            imap_pass: process.env.IMAP_PASS || '',
+            imap_mailbox: process.env.IMAP_MAILBOX || 'INBOX',
+            from_exact: process.env.FROM_EXACT || '',
+            subject_prefix: process.env.SUBJECT_PREFIX || '',
+            label_processed: process.env.LABEL_PROCESSED || '',
+            firestore_project_id: process.env.FIRESTORE_PROJECT_ID || '',
+            schedule_enabled: enabled,
+            schedule_cron: cronExpression,
+            schedule_start_time: startTime,
+            schedule_end_time: endTime,
+            schedule_interval: interval,
+            log_level: process.env.LOG_LEVEL || 'info'
+        };
+        // Call Home Assistant Supervisor API to update add-on options
+        const supervisorToken = process.env.SUPERVISOR_TOKEN;
+        if (!supervisorToken) {
+            throw new Error('SUPERVISOR_TOKEN not available');
         }
-      }
-    }
-    
-    // Get current add-on options from environment
-    const currentOptions = {
-      imap_host: process.env.IMAP_HOST || '',
-      imap_port: parseInt(process.env.IMAP_PORT || '993', 10),
-      imap_user: process.env.IMAP_USER || '',
-      imap_pass: process.env.IMAP_PASS || '',
-      imap_mailbox: process.env.IMAP_MAILBOX || 'INBOX',
-      from_exact: process.env.FROM_EXACT || '',
-      subject_prefix: process.env.SUBJECT_PREFIX || '',
-      label_processed: process.env.LABEL_PROCESSED || '',
-      firestore_project_id: process.env.FIRESTORE_PROJECT_ID || '',
-      schedule_enabled: enabled,
-      schedule_cron: cronExpression,
-      schedule_start_time: startTime,
-      schedule_end_time: endTime,
-      schedule_interval: interval,
-      log_level: process.env.LOG_LEVEL || 'info'
-    };
-    
-    // Call Home Assistant Supervisor API to update add-on options
-    const supervisorToken = process.env.SUPERVISOR_TOKEN;
-    if (!supervisorToken) {
-      throw new Error('SUPERVISOR_TOKEN not available');
-    }
-    
-    const supervisorUrl = 'http://supervisor/addons/self/options';
-    console.log('[API] Updating add-on config via Supervisor API...');
-    console.log('[API] New schedule:', { enabled, cron: cronExpression });
-    
-    const response = await fetch(supervisorUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + supervisorToken,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ options: currentOptions })
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error('Supervisor API error: ' + response.status + ' - ' + errorText);
-    }
-    
-    const result = await response.json();
-    console.log('[API] Supervisor API response:', result);
-    
-    // Send response first to ensure client receives it before restart
-    res.json({ 
-      ok: true, 
-      message: 'Schedule saved! Add-on will restart to apply changes.',
-      config: { enabled, startTime, endTime, interval, cron: cronExpression },
-      needsRestart: true
-    });
-    
-    // Trigger restart after a delay to ensure response is sent
-    setTimeout(async () => {
-      try {
-        console.log('[API] Triggering add-on restart...');
-        const restartUrl = 'http://supervisor/addons/self/restart';
-        
-        const restartResponse = await fetch(restartUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + supervisorToken,
-            'Content-Type': 'application/json'
-          }
+        const supervisorUrl = 'http://supervisor/addons/self/options';
+        console.log('[API] Updating add-on config via Supervisor API...');
+        console.log('[API] New schedule:', { enabled, cron: cronExpression });
+        const response = await (0, node_fetch_1.default)(supervisorUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + supervisorToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ options: currentOptions })
         });
-        
-        if (!restartResponse.ok) {
-          console.warn('[API] Restart request returned status:', restartResponse.status);
-        } else {
-          console.log('[API] Restart triggered successfully');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error('Supervisor API error: ' + response.status + ' - ' + errorText);
         }
-      } catch (restartError) {
-        console.warn('[API] Could not trigger restart:', restartError);
-      }
-    }, 500); // 500ms delay to ensure response is sent
-  } catch (error) {
-    console.error('[API] Schedule save failed:', error);
-    res.status(500).json({ ok: false, error: String(error) });
-  }
+        const result = await response.json();
+        console.log('[API] Supervisor API response:', result);
+        // Send response first to ensure client receives it before restart
+        res.json({
+            ok: true,
+            message: 'Schedule saved! Add-on will restart to apply changes.',
+            config: { enabled, startTime, endTime, interval, cron: cronExpression },
+            needsRestart: true
+        });
+        // Trigger restart after a delay to ensure response is sent
+        setTimeout(async () => {
+            try {
+                console.log('[API] Triggering add-on restart...');
+                const restartUrl = 'http://supervisor/addons/self/restart';
+                const restartResponse = await (0, node_fetch_1.default)(restartUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + supervisorToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!restartResponse.ok) {
+                    console.warn('[API] Restart request returned status:', restartResponse.status);
+                }
+                else {
+                    console.log('[API] Restart triggered successfully');
+                }
+            }
+            catch (restartError) {
+                console.warn('[API] Could not trigger restart:', restartError);
+            }
+        }, 500); // 500ms delay to ensure response is sent
+    }
+    catch (error) {
+        console.error('[API] Schedule save failed:', error);
+        res.status(500).json({ ok: false, error: String(error) });
+    }
 });
-
 // Start server
 const port = parseInt(process.env.PORT || '8099', 10);
 app.listen(port, () => {
-  console.log(`[Server] Ingress UI running on port ${port}`);
-  console.log('[Server] Schedule controls available in UI');
+    console.log(`[Server] Ingress UI running on port ${port}`);
+    console.log('[Server] Schedule controls available in UI');
 });
