@@ -118,6 +118,10 @@ export async function runWorker(): Promise<{ emails: number; invoices: number; p
     );
 
     console.log('Worker completed');
+    if (failures.length > 0) {
+      console.error(`Worker completed with ${failures.length} failure(s):`);
+      failures.forEach((f, i) => console.error(`  [${i+1}] ${f.type}: ${f.message}`, f.details || ''));
+    }
     return { emails: emails.length, invoices: totalInvoicesProcessed, products: totalProductsUpdated, failures: failures.length, runId: syncRunId };
 
   } catch (error) {
