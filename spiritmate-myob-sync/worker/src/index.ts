@@ -14,8 +14,7 @@ function loadConfig(): WorkerConfig {
     'IMAP_PASS',
     'FROM_EXACT',
     'SUBJECT_PREFIX',
-    'FIRESTORE_PROJECT_ID',
-    'GOOGLE_APPLICATION_CREDENTIALS'
+    'FIRESTORE_PROJECT_ID'
   ];
 
   for (const envVar of requiredEnvVars) {
@@ -23,6 +22,9 @@ function loadConfig(): WorkerConfig {
       throw new Error(`Missing required environment variable: ${envVar}`);
     }
   }
+
+  // Use hardcoded path for credentials (always at /app/service-account.json in container)
+  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS || '/app/service-account.json';
 
   return {
     imap: {
@@ -39,7 +41,7 @@ function loadConfig(): WorkerConfig {
     },
     firestore: {
       projectId: process.env.FIRESTORE_PROJECT_ID!,
-      credentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS!,
+      credentialsPath: credentialsPath,
     },
     logging: {
       level: process.env.LOG_LEVEL || 'info',
