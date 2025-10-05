@@ -467,7 +467,7 @@ app.get('/', (_req, res) => {
         </button>
       </div>
 
-      <div class="card">
+  <div class="card">
         <h2>📊 Sync Statistics</h2>
         <div id="statsContainer">
           <div class="info-row">
@@ -535,11 +535,11 @@ app.get('/', (_req, res) => {
         </button>
 
         <div class="config-note">
-          <strong>Note:</strong> Schedule settings are stored in the add-on configuration. 
-          For advanced cron schedules, edit the configuration YAML directly in Home Assistant.
+          <strong>Note:</strong> Changes are saved to Home Assistant configuration and persist across restarts. 
+          The add-on will restart automatically when you save schedule changes.
         </div>
       </div>
-    </div>
+        </div>
 
     <div id="logSection" class="log-section collapsed">
       <div class="card full-width" style="margin-top: 0;">
@@ -550,7 +550,7 @@ app.get('/', (_req, res) => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
   </div>
 
   <script>
@@ -698,6 +698,11 @@ app.get('/', (_req, res) => {
       saveScheduleBtn.innerHTML = '<div class="spinner"></div><span>Saving...</span>';
       addLog('Saving schedule configuration...');
       
+      // Auto-expand logs
+      if (!logsExpanded) {
+        toggleLogsBtn.click();
+      }
+      
       try {
         const config = {
           enabled: scheduleEnabled.checked,
@@ -715,17 +720,66 @@ app.get('/', (_req, res) => {
         const data = await response.json();
         
         if (data.ok) {
-          showAlert('success', '✓ Schedule saved successfully!');
-          addLog('Schedule configuration saved');
-          checkStatus();
+          if (data.needsRestart) {
+            showAlert('info', '⚠️ Schedule saved! Add-on will restart in a few seconds...');
+            addLog('Schedule saved. Add-on restarting to apply changes...');
+            addLog('Cron expression: ' + data.config.cron);
+            
+            // Disable all buttons during restart
+            runSyncBtn.disabled = true;
+            refreshBtn.disabled = true;
+            saveScheduleBtn.disabled = true;
+            
+            // Show reconnecting message after a delay
+            setTimeout(() => {
+              addLog('Waiting for add-on to restart...');
+              showAlert('info', '🔄 Reconnecting after restart...');
+            }, 3000);
+            
+            // Try to reconnect after restart (poll every 2 seconds)
+            let reconnectAttempts = 0;
+            const reconnectInterval = setInterval(async () => {
+              reconnectAttempts++;
+              try {
+                const testResponse = await fetch('api/status');
+                if (testResponse.ok) {
+                  clearInterval(reconnectInterval);
+                  addLog('✓ Reconnected successfully!');
+                  showAlert('success', '✓ Add-on restarted. Schedule is now active!');
+                  
+                  // Re-enable buttons
+                  runSyncBtn.disabled = false;
+                  refreshBtn.disabled = false;
+                  saveScheduleBtn.disabled = false;
+                  saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
+                  
+                  // Refresh status
+                  checkStatus();
+                }
+      } catch (e) {
+                if (reconnectAttempts > 30) {
+                  clearInterval(reconnectInterval);
+                  addLog('✗ Reconnection timeout. Please refresh the page.');
+                  showAlert('error', '✗ Could not reconnect. Please refresh the page.');
+                }
+              }
+            }, 2000);
+          } else {
+            showAlert('success', '✓ Schedule saved successfully!');
+            addLog('Schedule configuration saved');
+            saveScheduleBtn.disabled = false;
+            saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
+            checkStatus();
+          }
         } else {
           showAlert('error', '✗ Failed to save: ' + (data.error || 'Unknown error'));
           addLog('Save failed: ' + (data.error || 'Unknown error'));
+          saveScheduleBtn.disabled = false;
+          saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
         }
       } catch (error) {
         showAlert('error', '✗ Save failed: ' + error.message);
         addLog('Save exception: ' + error.message);
-      } finally {
         saveScheduleBtn.disabled = false;
         saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
       }
@@ -808,14 +862,76 @@ app.post('/api/schedule', async (req, res) => {
     console.log('[API] Schedule config update:', req.body);
     const { enabled, startTime, endTime, interval } = req.body;
     
-    // Note: In a real implementation, this would update the Home Assistant config
-    // For now, we'll just acknowledge the request
-    // The actual schedule is managed via the add-on configuration in Home Assistant
+    // Convert start/end time + interval to cron expression
+    // For simplicity: if enabled, use interval-based cron during active hours
+    // We'll generate a simple cron based on interval (ignoring time windows for now)
+    let cronExpression = '0 2 * * *'; // Default: 2 AM daily
+    
+    if (enabled && interval) {
+      // Convert interval (minutes) to cron
+      if (interval === 15) {
+        cronExpression = '*/15 * * * *'; // Every 15 minutes
+      } else if (interval === 30) {
+        cronExpression = '*/30 * * * *'; // Every 30 minutes
+      } else if (interval === 60) {
+        cronExpression = '0 * * * *'; // Every hour
+      } else if (interval === 120) {
+        cronExpression = '0 */2 * * *'; // Every 2 hours
+      } else if (interval === 180) {
+        cronExpression = '0 */3 * * *'; // Every 3 hours
+      } else if (interval === 360) {
+        cronExpression = '0 */6 * * *'; // Every 6 hours
+      }
+    }
+    
+    // Get current add-on options from environment
+    const currentOptions = {
+      imap_host: process.env.IMAP_HOST || '',
+      imap_port: parseInt(process.env.IMAP_PORT || '993', 10),
+      imap_user: process.env.IMAP_USER || '',
+      imap_pass: process.env.IMAP_PASS || '',
+      imap_mailbox: process.env.IMAP_MAILBOX || 'INBOX',
+      from_exact: process.env.FROM_EXACT || '',
+      subject_prefix: process.env.SUBJECT_PREFIX || '',
+      label_processed: process.env.LABEL_PROCESSED || '',
+      firestore_project_id: process.env.FIRESTORE_PROJECT_ID || '',
+      schedule_enabled: enabled,
+      schedule_cron: cronExpression,
+      log_level: process.env.LOG_LEVEL || 'info'
+    };
+    
+    // Call Home Assistant Supervisor API to update add-on options
+    const supervisorToken = process.env.SUPERVISOR_TOKEN;
+    if (!supervisorToken) {
+      throw new Error('SUPERVISOR_TOKEN not available');
+    }
+    
+    const supervisorUrl = 'http://supervisor/addons/self/options';
+    console.log('[API] Updating add-on config via Supervisor API...');
+    console.log('[API] New schedule:', { enabled, cron: cronExpression });
+    
+    const response = await fetch(supervisorUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': \`Bearer \${supervisorToken}\`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ options: currentOptions })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(\`Supervisor API error: \${response.status} - \${errorText}\`);
+    }
+    
+    const result = await response.json();
+    console.log('[API] Supervisor API response:', result);
     
     res.json({ 
       ok: true, 
-      message: 'Schedule config received. Update via HA config for persistence.',
-      config: { enabled, startTime, endTime, interval }
+      message: 'Schedule saved! Add-on will restart to apply changes.',
+      config: { enabled, startTime, endTime, interval, cron: cronExpression },
+      needsRestart: true
     });
   } catch (error) {
     console.error('[API] Schedule save failed:', error);
