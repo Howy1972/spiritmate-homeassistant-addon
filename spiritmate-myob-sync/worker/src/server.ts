@@ -5,220 +5,491 @@ import { runWorker } from './index';
 const app = express();
 app.use(express.json());
 
+// Main UI
 app.get('/', (_req, res) => {
-  res.set('Content-Type', 'text/html').send(`<!doctype html>
+  res.set('Content-Type', 'text/html').send(`<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpiritMate MYOB Sync</title>
   <style>
-    :root { --bg:#0a0e14; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --brand:#10b981; --accent:#3b82f6; --danger:#ef4444; --warn:#f59e0b; }
-    *{ box-sizing:border-box; margin:0; padding:0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
-    .container { max-width: 900px; margin: 0 auto; padding: 24px; }
-    .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid #1f2937; }
-    h1 { font-size: 28px; font-weight:700; }
-    .badge { padding:8px 16px; border-radius:999px; font-size:14px; font-weight:600; }
-    .badge.ready { background:#10b98120; color:var(--brand); border:1px solid var(--brand); }
-    .badge.error { background:#ef444420; color:var(--danger); border:1px solid var(--danger); }
-    .badge.pending { background:#f59e0b20; color:var(--warn); border:1px solid var(--warn); }
-    .grid { display:grid; gap:20px; }
-    .card { background:var(--card); border:1px solid #1f2937; border-radius:12px; padding:24px; }
-    .card h2 { font-size:20px; margin-bottom:12px; font-weight:600; }
-    .card p { color:var(--muted); font-size:14px; margin-bottom:16px; line-height:1.5; }
-    .info-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #1f2937; }
-    .info-row:last-child { border:none; }
-    .info-label { color:var(--muted); font-size:14px; }
-    .info-value { font-weight:600; font-size:14px; }
-    button { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:12px 20px; font-weight:600; cursor:pointer; font-size:15px; transition:all 0.2s; width:100%; }
-    button:hover:not(:disabled) { opacity:0.9; transform:translateY(-1px); }
-    button:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
-    button.secondary { background:#374151; }
-    button.success { background:var(--brand); }
-    button.danger { background:var(--danger); }
-    .alert { padding:14px 18px; border-radius:8px; margin-bottom:20px; font-size:14px; font-weight:500; }
-    .alert.success { background:#10b98120; color:var(--brand); border:1px solid var(--brand); }
-    .alert.error { background:#ef444420; color:var(--danger); border:1px solid var(--danger); }
-    .alert.info { background:#3b82f620; color:var(--accent); border:1px solid var(--accent); }
-    pre { background:#0f1419; padding:16px; border-radius:8px; border:1px solid #1f2937; overflow:auto; max-height:400px; font-size:13px; line-height:1.5; }
-    .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:8px; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
-    .stat { background:#0f1419; padding:16px; border-radius:8px; border:1px solid #1f2937; text-align:center; }
-    .stat-value { font-size:24px; font-weight:700; color:var(--brand); }
-    .stat-label { font-size:12px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }
-    code { background:#0f1419; padding:2px 6px; border-radius:4px; font-size:13px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0a0e14 0%, #1a1f2e 100%);
+      color: #e5e7eb;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      padding: 30px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(16, 185, 129, 0.2);
+    }
+    
+    .header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+    
+    .status-bar {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    
+    .status-card {
+      flex: 1;
+      min-width: 200px;
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    
+    .status-label {
+      font-size: 13px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    
+    .status-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .status-value.ready {
+      color: #10b981;
+    }
+    
+    .status-value.error {
+      color: #ef4444;
+    }
+    
+    .status-value.pending {
+      color: #f59e0b;
+    }
+    
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+    
+    .card {
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 12px;
+      padding: 25px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card h2 {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #10b981;
+    }
+    
+    .card p {
+      color: #9ca3af;
+      font-size: 14px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    
+    button {
+      width: 100%;
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: #374151;
+      color: #e5e7eb;
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+    }
+    
+    .alert {
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 500;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .alert-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      color: #10b981;
+    }
+    
+    .alert-error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid #ef4444;
+      color: #ef4444;
+    }
+    
+    .alert-info {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid #3b82f6;
+      color: #3b82f6;
+    }
+    
+    .log-container {
+      background: #0f1419;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #9ca3af;
+    }
+    
+    .log-entry {
+      margin-bottom: 8px;
+    }
+    
+    .log-timestamp {
+      color: #6366f1;
+      font-weight: 600;
+    }
+    
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .info-box {
+      background: #0f1419;
+      border: 1px solid #374151;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+    
+    .info-box code {
+      background: #1f2937;
+      padding: 3px 8px;
+      border-radius: 4px;
+      color: #10b981;
+      font-size: 12px;
+    }
+    
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #374151;
+    }
+    
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    
+    .full-width {
+      grid-column: 1 / -1;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <h1>🍸 SpiritMate MYOB Sync</h1>
-      <span id="statusBadge" class="badge pending">Checking…</span>
+      <p>Automated invoice processing and inventory synchronization</p>
     </div>
 
-    <div id="alertBox"></div>
+    <div id="alertContainer"></div>
+
+    <div class="status-bar">
+      <div class="status-card">
+        <div class="status-label">System Status</div>
+        <div id="systemStatus" class="status-value pending">Checking...</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">Credentials</div>
+        <div id="credStatus" class="status-value pending">Checking...</div>
+      </div>
+      <div class="status-card">
+        <div class="status-label">Last Updated</div>
+        <div id="lastUpdate" class="status-value">—</div>
+      </div>
+    </div>
 
     <div class="grid">
       <div class="card">
-        <h2>📊 System Status</h2>
-        <div class="info-row">
-          <span class="info-label">Firebase Credentials</span>
-          <span id="credStatus" class="info-value">Checking…</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Last Status Check</span>
-          <span id="lastCheck" class="info-value">—</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Credential File Path</span>
-          <span class="info-value" style="font-size:12px; color:var(--muted);">/share/spiritmate/service-account.json</span>
-        </div>
-        <button id="refreshBtn" class="secondary" style="margin-top:20px;">🔄 Refresh Status</button>
+        <h2>⚡ Quick Actions</h2>
+        <p>Trigger manual sync or refresh system status</p>
+        <button id="runSyncBtn" class="btn-primary">
+          <span>▶️</span>
+          <span>Run Sync Now</span>
+        </button>
+        <button id="refreshBtn" class="btn-secondary" style="margin-top: 10px;">
+          <span>🔄</span>
+          <span>Refresh Status</span>
+        </button>
       </div>
 
       <div class="card">
-        <h2>▶️ Manual Sync</h2>
-        <p>Trigger a one-time sync operation now. This will fetch emails, parse invoices, and update Firestore (ignores schedule).</p>
-        <button id="runBtn" class="success">▶️ Run Sync Now</button>
-        <div id="syncStats" class="stat-grid" style="display:none;">
-          <div class="stat">
-            <div id="emailsProcessed" class="stat-value">0</div>
-            <div class="stat-label">Emails Processed</div>
+        <h2>📊 Sync Statistics</h2>
+        <div id="statsContainer">
+          <div class="info-row">
+            <span>Emails Processed</span>
+            <span id="emailCount">—</span>
           </div>
-          <div class="stat">
-            <div id="lastSyncTime" class="stat-value">—</div>
-            <div class="stat-label">Last Sync</div>
+          <div class="info-row">
+            <span>Last Sync</span>
+            <span id="lastSync">Never</span>
           </div>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card full-width">
         <h2>📋 Activity Log</h2>
-        <pre id="logOutput">Ready. Click "Run Sync Now" to start processing emails.</pre>
+        <div id="logContainer" class="log-container">
+          <div class="log-entry">
+            <span class="log-timestamp">[Ready]</span> System initialized. Click "Run Sync Now" to start processing.
+          </div>
+        </div>
       </div>
 
-      <div class="card">
-        <h2>ℹ️ Quick Help</h2>
-        <p style="margin-bottom:8px;"><strong>Credentials Setup:</strong> Upload your Firebase service-account.json via Samba to <code>/share/spiritmate/</code></p>
-        <p style="margin-bottom:8px;"><strong>Schedule:</strong> Configure sync schedule in the add-on Configuration tab (cron format: <code>0 2 * * *</code> = daily at 2am)</p>
-        <p><strong>Manual Sync:</strong> Use the button above to run immediately, regardless of schedule settings</p>
+      <div class="card full-width">
+        <h2>ℹ️ Configuration Guide</h2>
+        <p><strong>Credentials:</strong> Place your Firebase <code>service-account.json</code> file via Samba/SSH at:</p>
+        <div class="info-box">
+          <code>/share/spiritmate/service-account.json</code>
+        </div>
+        <p style="margin-top: 15px;"><strong>Schedule:</strong> Configure automatic sync schedule in the add-on Configuration tab using cron syntax:</p>
+        <div class="info-box">
+          <div style="margin-bottom: 8px;"><code>0 2 * * *</code> → Daily at 2:00 AM</div>
+          <div style="margin-bottom: 8px;"><code>0 */6 * * *</code> → Every 6 hours</div>
+          <div><code>*/30 * * * *</code> → Every 30 minutes</div>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
-    const statusBadge = document.getElementById('statusBadge');
+    const systemStatus = document.getElementById('systemStatus');
     const credStatus = document.getElementById('credStatus');
-    const lastCheck = document.getElementById('lastCheck');
-    const alertBox = document.getElementById('alertBox');
-    const logOutput = document.getElementById('logOutput');
-    const runBtn = document.getElementById('runBtn');
+    const lastUpdate = document.getElementById('lastUpdate');
+    const alertContainer = document.getElementById('alertContainer');
+    const logContainer = document.getElementById('logContainer');
+    const runSyncBtn = document.getElementById('runSyncBtn');
     const refreshBtn = document.getElementById('refreshBtn');
-    const syncStats = document.getElementById('syncStats');
-    const emailsProcessed = document.getElementById('emailsProcessed');
-    const lastSyncTime = document.getElementById('lastSyncTime');
+    const emailCount = document.getElementById('emailCount');
+    const lastSync = document.getElementById('lastSync');
 
     function showAlert(type, message) {
-      alertBox.innerHTML = '<div class="alert ' + type + '">' + message + '</div>';
-      setTimeout(() => { alertBox.innerHTML = ''; }, 8000);
+      const alert = document.createElement('div');
+      alert.className = 'alert alert-' + type;
+      alert.textContent = message;
+      alertContainer.appendChild(alert);
+      
+      setTimeout(() => {
+        alert.style.opacity = '0';
+        setTimeout(() => alert.remove(), 300);
+      }, 6000);
     }
 
-    function log(text) {
+    function addLog(message) {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
       const timestamp = new Date().toLocaleTimeString();
-      logOutput.textContent = '[' + timestamp + '] ' + text;
+      entry.innerHTML = '<span class="log-timestamp">[' + timestamp + ']</span> ' + message;
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
     }
 
     async function checkStatus() {
       try {
-        const res = await fetch('/api/status');
-        const data = await res.json();
-        lastCheck.textContent = new Date().toLocaleTimeString();
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        
+        lastUpdate.textContent = new Date().toLocaleTimeString();
         
         if (data.hasCredentials) {
-          statusBadge.className = 'badge ready';
-          statusBadge.textContent = '✓ Ready';
-          credStatus.textContent = '✓ Configured';
-          credStatus.style.color = 'var(--brand)';
+          systemStatus.textContent = '✓ Ready';
+          systemStatus.className = 'status-value ready';
+          credStatus.textContent = '✓ Found';
+          credStatus.className = 'status-value ready';
         } else {
-          statusBadge.className = 'badge error';
-          statusBadge.textContent = '✗ Not Ready';
+          systemStatus.textContent = '✗ Not Ready';
+          systemStatus.className = 'status-value error';
           credStatus.textContent = '✗ Missing';
-          credStatus.style.color = 'var(--danger)';
+          credStatus.className = 'status-value error';
         }
-      } catch (e) {
-        statusBadge.className = 'badge error';
-        statusBadge.textContent = '✗ Error';
-        credStatus.textContent = 'Error checking';
-        log('Status check failed: ' + e.message);
+      } catch (error) {
+        systemStatus.textContent = '✗ Error';
+        systemStatus.className = 'status-value error';
+        credStatus.textContent = '✗ Unknown';
+        credStatus.className = 'status-value error';
+        addLog('Status check failed: ' + error.message);
       }
     }
 
-    runBtn.addEventListener('click', async () => {
-      runBtn.disabled = true;
-      runBtn.innerHTML = '<span class="spinner"></span>Running sync…';
-      log('Starting MYOB sync operation…');
+    async function runSync() {
+      runSyncBtn.disabled = true;
+      runSyncBtn.innerHTML = '<div class="spinner"></div><span>Running...</span>';
+      addLog('Starting manual sync operation...');
       
       try {
-        const res = await fetch('/api/run', { method: 'POST' });
-        const data = await res.json();
+        const response = await fetch('/api/run', { method: 'POST' });
+        const data = await response.json();
         
-        if (data.ok && data.result) {
+        if (data.ok) {
           showAlert('success', '✓ Sync completed successfully!');
-          log('Sync completed: ' + JSON.stringify(data.result, null, 2));
+          addLog('Sync completed successfully');
           
-          // Show stats if available
-          if (data.result.emailsProcessed !== undefined) {
-            syncStats.style.display = 'grid';
-            emailsProcessed.textContent = data.result.emailsProcessed || 0;
-            lastSyncTime.textContent = new Date().toLocaleTimeString();
+          if (data.result) {
+            addLog('Result: ' + JSON.stringify(data.result, null, 2));
+            
+            if (data.result.emailsProcessed !== undefined) {
+              emailCount.textContent = data.result.emailsProcessed;
+            }
+            lastSync.textContent = new Date().toLocaleTimeString();
           }
         } else {
           showAlert('error', '✗ Sync failed: ' + (data.error || 'Unknown error'));
-          log('Sync error: ' + JSON.stringify(data, null, 2));
+          addLog('Sync failed: ' + (data.error || 'Unknown error'));
         }
-      } catch (e) {
-        showAlert('error', '✗ Sync failed: ' + e.message);
-        log('Sync exception: ' + e.message);
+      } catch (error) {
+        showAlert('error', '✗ Sync failed: ' + error.message);
+        addLog('Sync exception: ' + error.message);
       } finally {
-        runBtn.disabled = false;
-        runBtn.textContent = '▶️ Run Sync Now';
+        runSyncBtn.disabled = false;
+        runSyncBtn.innerHTML = '<span>▶️</span><span>Run Sync Now</span>';
       }
-    });
+    }
 
+    runSyncBtn.addEventListener('click', runSync);
     refreshBtn.addEventListener('click', () => {
-      log('Refreshing status…');
+      addLog('Refreshing status...');
       checkStatus();
     });
 
-    // Auto-refresh status every 15s
+    // Initial status check
     checkStatus();
+    
+    // Auto-refresh every 15 seconds
     setInterval(checkStatus, 15000);
   </script>
 </body>
 </html>`);
 });
 
+// API: Check system status
 app.get('/api/status', (_req, res) => {
-  const ready = fs.existsSync('/share/spiritmate/service-account.json');
-  res.json({ ok: ready, time: new Date().toISOString(), hasCredentials: ready });
-});
-
-app.post('/api/run', async (_req, res) => {
   try {
-    console.log('[api/run] Starting manual sync...');
-    const result = await runWorker();
-    console.log('[api/run] Sync completed:', result);
-    res.json({ ok: true, result });
-  } catch (e) {
-    console.error('[api/run] Sync failed:', e);
-    res.status(500).json({ ok: false, error: String(e) });
+    const hasCredentials = fs.existsSync('/share/spiritmate/service-account.json');
+    res.json({
+      ok: true,
+      hasCredentials,
+      time: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: String(error)
+    });
   }
 });
 
+// API: Run manual sync
+app.post('/api/run', async (_req, res) => {
+  try {
+    console.log('[API] Manual sync triggered');
+    const result = await runWorker();
+    console.log('[API] Sync completed:', JSON.stringify(result));
+    res.json({ ok: true, result });
+  } catch (error) {
+    console.error('[API] Sync failed:', error);
+    res.status(500).json({ ok: false, error: String(error) });
+  }
+});
+
+// Start server
 const port = parseInt(process.env.PORT || '8099', 10);
 app.listen(port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`[server] Ingress UI listening on port ${port}`);
+  console.log(`[Server] Ingress UI running on port ${port}`);
+  console.log('[Server] No file upload endpoints - credentials managed via Samba');
 });
