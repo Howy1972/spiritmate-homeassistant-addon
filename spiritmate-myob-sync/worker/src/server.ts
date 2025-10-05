@@ -56,7 +56,6 @@ app.get('/', (_req, res) => {
         <form id="uploadForm" class="row">
           <input type="file" id="file" name="file" accept="application/json,.json" />
           <button type="submit">Upload</button>
-          <button id="verifyBtn" type="button" class="secondary">Verify</button>
         </form>
         <div id="uploadResult" style="margin-top:8px; min-height:20px;"></div>
         <div class="spacer"></div>
@@ -80,7 +79,6 @@ app.get('/', (_req, res) => {
     const logOut = document.getElementById('logOut');
     const checkStatus = document.getElementById('checkStatus');
     const runNow = document.getElementById('runNow');
-    const verifyBtn = document.getElementById('verifyBtn');
 
     function setBadge(ok, text){
       statusBadge.className = 'pill ' + (ok ? 'ok' : 'err');
@@ -115,18 +113,7 @@ app.get('/', (_req, res) => {
       }
     });
 
-    verifyBtn.addEventListener('click', async () => {
-      const file = document.getElementById('file').files[0];
-      if (!file) { uploadResult.textContent = 'Choose a JSON file first.'; return; }
-      try {
-        const text = await file.text();
-        const clean = text.replace(/^\uFEFF/, '').trim();
-        JSON.parse(clean);
-        uploadResult.textContent = 'JSON looks valid.';
-      } catch (e) {
-        uploadResult.textContent = 'Invalid JSON: ' + e.message;
-      }
-    });
+    // Client-side verification removed by request
 
     checkStatus.addEventListener('click', fetchStatus);
 
