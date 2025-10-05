@@ -130,13 +130,26 @@ function parseSingleProductLine(line: string): ParsedInvoiceItem | null {
 
 export async function parsePdfInvoice(pdfBuffer: Buffer): Promise<ParsedInvoice | null> {
   try {
+    console.log(`[PDF] Parsing PDF, buffer size: ${pdfBuffer.length} bytes`);
     const pdfData = await (pdfParse as any).default(pdfBuffer);
     const text = pdfData.text as string;
+    console.log(`[PDF] Extracted text length: ${text.length} chars`);
+    console.log(`[PDF] First 500 chars: ${text.substring(0, 500)}`);
+    
     const invoiceNumber = extractInvoiceNumber(text);
-    if (!invoiceNumber) return null;
+    console.log(`[PDF] Extracted invoice number: ${invoiceNumber || 'NOT FOUND'}`);
+    
+    if (!invoiceNumber) {
+      console.error('[PDF] Failed to extract invoice number from text');
+      return null;
+    }
+    
     const items = parseLines(text);
+    console.log(`[PDF] Parsed ${items.length} line items`);
+    
     return { invoiceNumber, isCreditNote: isCreditNote(text), items };
   } catch (e) {
+    console.error('[PDF] Parse error:', e);
     return null;
   }
 }
