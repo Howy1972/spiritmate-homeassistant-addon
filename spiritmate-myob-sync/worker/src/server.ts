@@ -1,13 +1,8 @@
 import express from 'express';
-// multer types are optional in our build environment
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const multer = require('multer');
 import fs from 'fs';
-import path from 'path';
 import { runWorker } from './index';
 
 const app = express();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
 app.use(express.json());
 
 app.get('/', (_req, res) => {
@@ -21,44 +16,45 @@ app.get('/', (_req, res) => {
     :root { --bg:#0a0e14; --card:#111827; --text:#e5e7eb; --muted:#9ca3af; --brand:#10b981; --accent:#3b82f6; --danger:#ef4444; --warn:#f59e0b; }
     *{ box-sizing:border-box; margin:0; padding:0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
-    .container { max-width: 960px; margin: 0 auto; padding: 24px; }
+    .container { max-width: 900px; margin: 0 auto; padding: 24px; }
     .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid #1f2937; }
-    h1 { font-size: 24px; font-weight:700; }
-    .badge { padding:6px 12px; border-radius:999px; font-size:13px; font-weight:600; }
+    h1 { font-size: 28px; font-weight:700; }
+    .badge { padding:8px 16px; border-radius:999px; font-size:14px; font-weight:600; }
     .badge.ready { background:#10b98120; color:var(--brand); border:1px solid var(--brand); }
     .badge.error { background:#ef444420; color:var(--danger); border:1px solid var(--danger); }
     .badge.pending { background:#f59e0b20; color:var(--warn); border:1px solid var(--warn); }
-    .grid { display:grid; gap:16px; }
-    .card { background:var(--card); border:1px solid #1f2937; border-radius:12px; padding:20px; }
-    .card h2 { font-size:18px; margin-bottom:16px; font-weight:600; }
-    .form-group { margin-bottom:16px; }
-    .form-group label { display:block; margin-bottom:6px; font-size:14px; font-weight:500; color:var(--muted); }
-    input[type=file], input[type=text], select { width:100%; background:#0f1419; color:var(--text); border:1px solid #374151; padding:10px 12px; border-radius:8px; font-size:14px; }
-    input[type=file]:focus, input[type=text]:focus, select:focus { outline:none; border-color:var(--accent); }
-    .btn-group { display:flex; gap:8px; flex-wrap:wrap; }
-    button { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 16px; font-weight:600; cursor:pointer; font-size:14px; transition:opacity 0.2s; }
-    button:hover:not(:disabled) { opacity:0.9; }
-    button:disabled { opacity:0.5; cursor:not-allowed; }
-    button.secondary { background:#374151; }
-    button.danger { background:var(--danger); }
-    button.success { background:var(--brand); }
-    .alert { padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px; }
-    .alert.success { background:#10b98120; color:var(--brand); border:1px solid var(--brand); }
-    .alert.error { background:#ef444420; color:var(--danger); border:1px solid var(--danger); }
-    .alert.info { background:#3b82f620; color:var(--accent); border:1px solid var(--accent); }
-    pre { background:#0f1419; padding:12px; border-radius:8px; border:1px solid #1f2937; overflow:auto; max-height:300px; font-size:13px; }
-    .info-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #1f2937; }
+    .grid { display:grid; gap:20px; }
+    .card { background:var(--card); border:1px solid #1f2937; border-radius:12px; padding:24px; }
+    .card h2 { font-size:20px; margin-bottom:12px; font-weight:600; }
+    .card p { color:var(--muted); font-size:14px; margin-bottom:16px; line-height:1.5; }
+    .info-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #1f2937; }
     .info-row:last-child { border:none; }
     .info-label { color:var(--muted); font-size:14px; }
     .info-value { font-weight:600; font-size:14px; }
-    .spinner { display:inline-block; width:14px; height:14px; border:2px solid #ffffff40; border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; }
+    button { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:12px 20px; font-weight:600; cursor:pointer; font-size:15px; transition:all 0.2s; width:100%; }
+    button:hover:not(:disabled) { opacity:0.9; transform:translateY(-1px); }
+    button:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+    button.secondary { background:#374151; }
+    button.success { background:var(--brand); }
+    button.danger { background:var(--danger); }
+    .alert { padding:14px 18px; border-radius:8px; margin-bottom:20px; font-size:14px; font-weight:500; }
+    .alert.success { background:#10b98120; color:var(--brand); border:1px solid var(--brand); }
+    .alert.error { background:#ef444420; color:var(--danger); border:1px solid var(--danger); }
+    .alert.info { background:#3b82f620; color:var(--accent); border:1px solid var(--accent); }
+    pre { background:#0f1419; padding:16px; border-radius:8px; border:1px solid #1f2937; overflow:auto; max-height:400px; font-size:13px; line-height:1.5; }
+    .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; margin-right:8px; }
     @keyframes spin { to { transform:rotate(360deg); } }
+    .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+    .stat { background:#0f1419; padding:16px; border-radius:8px; border:1px solid #1f2937; text-align:center; }
+    .stat-value { font-size:24px; font-weight:700; color:var(--brand); }
+    .stat-label { font-size:12px; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }
+    code { background:#0f1419; padding:2px 6px; border-radius:4px; font-size:13px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>SpiritMate MYOB Sync</h1>
+      <h1>🍸 SpiritMate MYOB Sync</h1>
       <span id="statusBadge" class="badge pending">Checking…</span>
     </div>
 
@@ -66,40 +62,48 @@ app.get('/', (_req, res) => {
 
     <div class="grid">
       <div class="card">
-        <h2>System Status</h2>
+        <h2>📊 System Status</h2>
         <div class="info-row">
-          <span class="info-label">Credentials</span>
-          <span class="info-value" id="credStatus">—</span>
+          <span class="info-label">Firebase Credentials</span>
+          <span id="credStatus" class="info-value">Checking…</span>
         </div>
         <div class="info-row">
-          <span class="info-label">Last Check</span>
-          <span class="info-value" id="lastCheck">—</span>
+          <span class="info-label">Last Status Check</span>
+          <span id="lastCheck" class="info-value">—</span>
         </div>
-        <div class="btn-group" style="margin-top:16px;">
-          <button id="refreshBtn" class="secondary">Refresh Status</button>
+        <div class="info-row">
+          <span class="info-label">Credential File Path</span>
+          <span class="info-value" style="font-size:12px; color:var(--muted);">/share/spiritmate/service-account.json</span>
         </div>
+        <button id="refreshBtn" class="secondary" style="margin-top:20px;">🔄 Refresh Status</button>
       </div>
 
       <div class="card">
-        <h2>Upload Credentials</h2>
-        <form id="uploadForm">
-          <div class="form-group">
-            <label>Firebase service-account.json</label>
-            <input type="file" id="fileInput" accept=".json" />
+        <h2>▶️ Manual Sync</h2>
+        <p>Trigger a one-time sync operation now. This will fetch emails, parse invoices, and update Firestore (ignores schedule).</p>
+        <button id="runBtn" class="success">▶️ Run Sync Now</button>
+        <div id="syncStats" class="stat-grid" style="display:none;">
+          <div class="stat">
+            <div id="emailsProcessed" class="stat-value">0</div>
+            <div class="stat-label">Emails Processed</div>
           </div>
-          <button type="submit" id="uploadBtn">Upload</button>
-        </form>
+          <div class="stat">
+            <div id="lastSyncTime" class="stat-value">—</div>
+            <div class="stat-label">Last Sync</div>
+          </div>
+        </div>
       </div>
 
       <div class="card">
-        <h2>Manual Sync</h2>
-        <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">Trigger a one-time sync now (ignores schedule).</p>
-        <button id="runBtn" class="success">Run Sync Now</button>
+        <h2>📋 Activity Log</h2>
+        <pre id="logOutput">Ready. Click "Run Sync Now" to start processing emails.</pre>
       </div>
 
       <div class="card">
-        <h2>Logs</h2>
-        <pre id="logOutput">No logs yet. Click buttons above to see output.</pre>
+        <h2>ℹ️ Quick Help</h2>
+        <p style="margin-bottom:8px;"><strong>Credentials Setup:</strong> Upload your Firebase service-account.json via Samba to <code>/share/spiritmate/</code></p>
+        <p style="margin-bottom:8px;"><strong>Schedule:</strong> Configure sync schedule in the add-on Configuration tab (cron format: <code>0 2 * * *</code> = daily at 2am)</p>
+        <p><strong>Manual Sync:</strong> Use the button above to run immediately, regardless of schedule settings</p>
       </div>
     </div>
   </div>
@@ -110,111 +114,87 @@ app.get('/', (_req, res) => {
     const lastCheck = document.getElementById('lastCheck');
     const alertBox = document.getElementById('alertBox');
     const logOutput = document.getElementById('logOutput');
-    const uploadForm = document.getElementById('uploadForm');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const fileInput = document.getElementById('fileInput');
     const runBtn = document.getElementById('runBtn');
     const refreshBtn = document.getElementById('refreshBtn');
+    const syncStats = document.getElementById('syncStats');
+    const emailsProcessed = document.getElementById('emailsProcessed');
+    const lastSyncTime = document.getElementById('lastSyncTime');
 
     function showAlert(type, message) {
       alertBox.innerHTML = '<div class="alert ' + type + '">' + message + '</div>';
-      setTimeout(() => { alertBox.innerHTML = ''; }, 5000);
+      setTimeout(() => { alertBox.innerHTML = ''; }, 8000);
     }
 
     function log(text) {
-      logOutput.textContent = text;
+      const timestamp = new Date().toLocaleTimeString();
+      logOutput.textContent = '[' + timestamp + '] ' + text;
     }
 
     async function checkStatus() {
       try {
         const res = await fetch('/api/status');
         const data = await res.json();
+        lastCheck.textContent = new Date().toLocaleTimeString();
         
         if (data.hasCredentials) {
           statusBadge.className = 'badge ready';
-          statusBadge.textContent = 'Ready';
-          credStatus.textContent = 'Configured ✓';
+          statusBadge.textContent = '✓ Ready';
+          credStatus.textContent = '✓ Configured';
+          credStatus.style.color = 'var(--brand)';
         } else {
           statusBadge.className = 'badge error';
-          statusBadge.textContent = 'Not Ready';
-          credStatus.textContent = 'Missing';
+          statusBadge.textContent = '✗ Not Ready';
+          credStatus.textContent = '✗ Missing';
+          credStatus.style.color = 'var(--danger)';
         }
-        
-        lastCheck.textContent = new Date(data.time).toLocaleTimeString();
-        log(JSON.stringify(data, null, 2));
       } catch (e) {
         statusBadge.className = 'badge error';
-        statusBadge.textContent = 'Error';
-        credStatus.textContent = 'Unknown';
-        log('Error: ' + e.message);
+        statusBadge.textContent = '✗ Error';
+        credStatus.textContent = 'Error checking';
+        log('Status check failed: ' + e.message);
       }
     }
 
-    uploadForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      if (!fileInput.files || !fileInput.files[0]) {
-        showAlert('error', 'Please select a file');
-        return;
-      }
-
-      uploadBtn.disabled = true;
-      uploadBtn.innerHTML = '<span class="spinner"></span> Uploading…';
-      
-      try {
-        const fd = new FormData(uploadForm);
-        
-        const res = await fetch('/api/upload-service-account', { method: 'POST', body: fd });
-        const data = await res.json();
-        
-        if (data.ok) {
-          showAlert('success', 'Credentials uploaded successfully');
-          log('Upload success: ' + data.path);
-          await checkStatus();
-          fileInput.value = '';
-        } else {
-          showAlert('error', 'Upload failed: ' + (data.error || 'Unknown error'));
-          log('Upload error: ' + JSON.stringify(data, null, 2));
-        }
-      } catch (e) {
-        showAlert('error', 'Upload failed: ' + e.message);
-        log('Upload exception: ' + e.message);
-      } finally {
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = 'Upload';
-      }
-    });
-
     runBtn.addEventListener('click', async () => {
       runBtn.disabled = true;
-      runBtn.innerHTML = '<span class="spinner"></span> Running…';
-      log('Starting sync…');
+      runBtn.innerHTML = '<span class="spinner"></span>Running sync…';
+      log('Starting MYOB sync operation…');
       
       try {
         const res = await fetch('/api/run', { method: 'POST' });
         const data = await res.json();
         
-        if (data.ok) {
-          showAlert('success', 'Sync completed: ' + data.result.invoices + ' invoices, ' + data.result.products + ' products updated');
-          log(JSON.stringify(data, null, 2));
+        if (data.ok && data.result) {
+          showAlert('success', '✓ Sync completed successfully!');
+          log('Sync completed: ' + JSON.stringify(data.result, null, 2));
+          
+          // Show stats if available
+          if (data.result.emailsProcessed !== undefined) {
+            syncStats.style.display = 'grid';
+            emailsProcessed.textContent = data.result.emailsProcessed || 0;
+            lastSyncTime.textContent = new Date().toLocaleTimeString();
+          }
         } else {
-          showAlert('error', 'Sync failed: ' + (data.error || 'Unknown error'));
-          log(JSON.stringify(data, null, 2));
+          showAlert('error', '✗ Sync failed: ' + (data.error || 'Unknown error'));
+          log('Sync error: ' + JSON.stringify(data, null, 2));
         }
       } catch (e) {
-        showAlert('error', 'Sync failed: ' + e.message);
+        showAlert('error', '✗ Sync failed: ' + e.message);
         log('Sync exception: ' + e.message);
       } finally {
         runBtn.disabled = false;
-        runBtn.textContent = 'Run Sync Now';
+        runBtn.textContent = '▶️ Run Sync Now';
       }
     });
 
-    refreshBtn.addEventListener('click', checkStatus);
+    refreshBtn.addEventListener('click', () => {
+      log('Refreshing status…');
+      checkStatus();
+    });
 
-    // Auto-refresh status every 10s
+    // Auto-refresh status every 15s
     checkStatus();
-    setInterval(checkStatus, 10000);
+    setInterval(checkStatus, 15000);
   </script>
 </body>
 </html>`);
@@ -225,53 +205,14 @@ app.get('/api/status', (_req, res) => {
   res.json({ ok: ready, time: new Date().toISOString(), hasCredentials: ready });
 });
 
-app.post('/api/upload-service-account', upload.single('file'), async (req: any, res) => {
-  try {
-    console.log('[upload] Request received');
-    console.log('[upload] Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('[upload] File present:', !!req.file);
-    
-    if (!req.file) {
-      console.error('[upload] No file in request');
-      return res.status(400).json({ ok: false, error: 'No file uploaded' });
-    }
-    
-    console.log('[upload] File details:', {
-      fieldname: req.file.fieldname,
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size,
-      bufferLength: req.file.buffer.length
-    });
-    
-    const shareDir = '/share/spiritmate';
-    if (!fs.existsSync(shareDir)) {
-      console.log('[upload] Creating directory:', shareDir);
-      fs.mkdirSync(shareDir, { recursive: true });
-    }
-    
-    const dest = path.join(shareDir, 'service-account.json');
-    console.log('[upload] Writing to:', dest);
-    
-    // Write raw buffer directly - no validation (Firebase SDK will validate)
-    fs.writeFileSync(dest, req.file.buffer);
-    
-    console.log('[upload] File written successfully');
-    console.log('[upload] File exists:', fs.existsSync(dest));
-    console.log('[upload] File size on disk:', fs.statSync(dest).size);
-    
-    return res.json({ ok: true, path: dest });
-  } catch (e) {
-    console.error('[upload] Error:', e);
-    return res.status(500).json({ ok: false, error: String(e) });
-  }
-});
-
 app.post('/api/run', async (_req, res) => {
   try {
+    console.log('[api/run] Starting manual sync...');
     const result = await runWorker();
+    console.log('[api/run] Sync completed:', result);
     res.json({ ok: true, result });
   } catch (e) {
+    console.error('[api/run] Sync failed:', e);
     res.status(500).json({ ok: false, error: String(e) });
   }
 });
@@ -279,5 +220,5 @@ app.post('/api/run', async (_req, res) => {
 const port = parseInt(process.env.PORT || '8099', 10);
 app.listen(port, () => {
   // eslint-disable-next-line no-console
-  console.log(`Ingress server listening on ${port}`);
+  console.log(`[server] Ingress UI listening on port ${port}`);
 });
