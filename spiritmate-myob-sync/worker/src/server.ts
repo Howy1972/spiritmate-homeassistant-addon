@@ -704,6 +704,12 @@ app.get('/', (_req, res) => {
         toggleLogsBtn.click();
       }
       
+      // Pause auto-refresh to prevent config from being overwritten
+      if (window.pauseAutoRefresh) {
+        window.pauseAutoRefresh();
+        addLog('Auto-refresh paused during save operation');
+      }
+      
       try {
         const config = {
           enabled: scheduleEnabled.checked,
@@ -726,10 +732,23 @@ app.get('/', (_req, res) => {
             addLog('Schedule saved. Add-on restarting to apply changes...');
             addLog('Cron expression: ' + data.config.cron);
             
+            // Update UI immediately with saved values (don't wait for restart)
+            if (data.config.enabled) {
+              scheduleStatus.textContent = '✓ Active';
+              scheduleStatus.className = 'status-value ready';
+            } else {
+              scheduleStatus.textContent = 'Manual Only';
+              scheduleStatus.className = 'status-value pending';
+            }
+            
             // Disable all buttons during restart
             runSyncBtn.disabled = true;
             refreshBtn.disabled = true;
             saveScheduleBtn.disabled = true;
+            scheduleEnabled.disabled = true;
+            startTime.disabled = true;
+            endTime.disabled = true;
+            syncInterval.disabled = true;
             
             // Show reconnecting message after a delay
             setTimeout(() => {
@@ -748,13 +767,23 @@ app.get('/', (_req, res) => {
                   addLog('✓ Reconnected successfully!');
                   showAlert('success', '✓ Add-on restarted. Schedule is now active!');
                   
-                  // Re-enable buttons
+                  // Re-enable buttons and inputs
                   runSyncBtn.disabled = false;
                   refreshBtn.disabled = false;
                   saveScheduleBtn.disabled = false;
+                  scheduleEnabled.disabled = false;
+                  startTime.disabled = false;
+                  endTime.disabled = false;
+                  syncInterval.disabled = false;
                   saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
                   
-                  // Refresh status
+                  // Resume auto-refresh
+                  if (window.resumeAutoRefresh) {
+                    window.resumeAutoRefresh();
+                    addLog('Auto-refresh resumed');
+                  }
+                  
+                  // Refresh status to get latest from server
                   checkStatus();
                 }
       } catch (e) {
@@ -762,6 +791,16 @@ app.get('/', (_req, res) => {
                   clearInterval(reconnectInterval);
                   addLog('✗ Reconnection timeout. Please refresh the page.');
                   showAlert('error', '✗ Could not reconnect. Please refresh the page.');
+                  
+                  // Re-enable on timeout
+                  runSyncBtn.disabled = false;
+                  refreshBtn.disabled = false;
+                  saveScheduleBtn.disabled = false;
+                  scheduleEnabled.disabled = false;
+                  startTime.disabled = false;
+                  endTime.disabled = false;
+                  syncInterval.disabled = false;
+                  saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
                 }
               }
             }, 2000);
@@ -770,6 +809,12 @@ app.get('/', (_req, res) => {
             addLog('Schedule configuration saved');
             saveScheduleBtn.disabled = false;
             saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
+            
+            // Resume auto-refresh
+            if (window.resumeAutoRefresh) {
+              window.resumeAutoRefresh();
+            }
+            
             checkStatus();
           }
         } else {
@@ -777,12 +822,22 @@ app.get('/', (_req, res) => {
           addLog('Save failed: ' + (data.error || 'Unknown error'));
           saveScheduleBtn.disabled = false;
           saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
+          
+          // Resume auto-refresh
+          if (window.resumeAutoRefresh) {
+            window.resumeAutoRefresh();
+          }
         }
       } catch (error) {
         showAlert('error', '✗ Save failed: ' + error.message);
         addLog('Save exception: ' + error.message);
         saveScheduleBtn.disabled = false;
         saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
+        
+        // Resume auto-refresh
+        if (window.resumeAutoRefresh) {
+          window.resumeAutoRefresh();
+        }
       }
     }
 
@@ -796,8 +851,22 @@ app.get('/', (_req, res) => {
     // Initial status check
     checkStatus();
     
-    // Auto-refresh every 15 seconds
-    setInterval(checkStatus, 15000);
+    // Auto-refresh every 15 seconds (but can be paused during save/restart)
+    let autoRefreshInterval = setInterval(checkStatus, 15000);
+    
+    // Expose function to pause/resume auto-refresh
+    window.pauseAutoRefresh = function() {
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+      }
+    };
+    
+    window.resumeAutoRefresh = function() {
+      if (!autoRefreshInterval) {
+        autoRefreshInterval = setInterval(checkStatus, 15000);
+      }
+    };
   </script>
 </body>
 </html>`);
