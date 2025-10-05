@@ -31,6 +31,11 @@ if bashio::var.is_empty "${IMAP_HOST}" || \
   exit 1
 fi
 
+# Export basic env vars that server needs (but NOT GOOGLE_APPLICATION_CREDENTIALS yet)
+export IMAP_HOST IMAP_PORT IMAP_USER IMAP_PASS IMAP_MAILBOX
+export FROM_EXACT SUBJECT_PREFIX LABEL_PROCESSED
+export FIRESTORE_PROJECT_ID LOG_LEVEL
+
 # Start ingress/status/upload server early WITHOUT credentials env var
 # This prevents Google Cloud SDK from auto-loading the credentials file
 PORT=8099 node /app/dist/server.js &
@@ -51,11 +56,8 @@ cp /share/spiritmate/service-account.json /app/service-account.json
 # NOW set the credentials path (after server is already running)
 GOOGLE_APPLICATION_CREDENTIALS=/app/service-account.json
 
-# Export environment for the Node worker
-export IMAP_HOST IMAP_PORT IMAP_USER IMAP_PASS IMAP_MAILBOX
-export FROM_EXACT SUBJECT_PREFIX LABEL_PROCESSED
-export FIRESTORE_PROJECT_ID GOOGLE_APPLICATION_CREDENTIALS
-export LOG_LEVEL
+# Export credentials env var (other vars already exported above)
+export GOOGLE_APPLICATION_CREDENTIALS
 
 bashio::log.info "Starting MYOB sync worker"
 bashio::log.info "IMAP: ${IMAP_USER}@${IMAP_HOST}:${IMAP_PORT}/${IMAP_MAILBOX:=INBOX}"
