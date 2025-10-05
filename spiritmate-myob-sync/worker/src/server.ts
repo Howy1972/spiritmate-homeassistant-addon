@@ -884,30 +884,17 @@ app.get('/api/status', (_req, res) => {
       hasCredentials = false;
     }
     
-    // Read schedule config from environment or config file
+    // Read schedule config from environment
     const scheduleEnabled = process.env.SCHEDULE_ENABLED === 'true';
     const scheduleCron = process.env.SCHEDULE_CRON || '0 2 * * *';
-    
-    // Parse cron expression back to interval
-    let interval = 30; // default
-    if (scheduleCron === '*/15 * * * *') {
-      interval = 15;
-    } else if (scheduleCron === '*/30 * * * *') {
-      interval = 30;
-    } else if (scheduleCron === '0 * * * *') {
-      interval = 60;
-    } else if (scheduleCron === '0 */2 * * *') {
-      interval = 120;
-    } else if (scheduleCron === '0 */3 * * *') {
-      interval = 180;
-    } else if (scheduleCron === '0 */6 * * *') {
-      interval = 360;
-    }
+    const startTime = process.env.SCHEDULE_START_TIME || '08:00';
+    const endTime = process.env.SCHEDULE_END_TIME || '18:00';
+    const interval = parseInt(process.env.SCHEDULE_INTERVAL || '30', 10);
     
     const scheduleConfig = {
       enabled: scheduleEnabled,
-      startTime: '08:00',
-      endTime: '18:00',
+      startTime: startTime,
+      endTime: endTime,
       interval: interval,
       cron: scheduleCron
     };
@@ -951,25 +938,33 @@ app.post('/api/schedule', async (req, res) => {
     console.log('[API] Schedule config update:', req.body);
     const { enabled, startTime, endTime, interval } = req.body;
     
-    // Convert start/end time + interval to cron expression
-    // For simplicity: if enabled, use interval-based cron during active hours
-    // We'll generate a simple cron based on interval (ignoring time windows for now)
+    // Parse start/end times
+    const startHour = parseInt(startTime.split(':')[0], 10);
+    const endHour = parseInt(endTime.split(':')[0], 10);
+    
+    // Generate cron expression based on interval and time window
     let cronExpression = '0 2 * * *'; // Default: 2 AM daily
     
     if (enabled && interval) {
-      // Convert interval (minutes) to cron
-      if (interval === 15) {
-        cronExpression = '*/15 * * * *'; // Every 15 minutes
-      } else if (interval === 30) {
-        cronExpression = '*/30 * * * *'; // Every 30 minutes
-      } else if (interval === 60) {
-        cronExpression = '0 * * * *'; // Every hour
-      } else if (interval === 120) {
-        cronExpression = '0 */2 * * *'; // Every 2 hours
-      } else if (interval === 180) {
-        cronExpression = '0 */3 * * *'; // Every 3 hours
-      } else if (interval === 360) {
-        cronExpression = '0 */6 * * *'; // Every 6 hours
+      // Generate cron that respects time window
+      if (interval < 60) {
+        // Sub-hourly: use minute-based cron with hour restriction
+        const minuteInterval = interval;
+        const hourRange = startHour + '-' + (endHour - 1);
+        cronExpression = '*/' + minuteInterval + ' ' + hourRange + ' * * *';
+      } else {
+        // Hourly or more: generate hour-based cron
+        const hourInterval = Math.floor(interval / 60);
+        const hours = [];
+        for (let h = startHour; h < endHour; h += hourInterval) {
+          hours.push(h);
+        }
+        if (hours.length > 0) {
+          cronExpression = '0 ' + hours.join(',') + ' * * *';
+        } else {
+          // Fallback if interval is too large
+          cronExpression = '0 ' + startHour + ' * * *';
+        }
       }
     }
     
@@ -986,6 +981,9 @@ app.post('/api/schedule', async (req, res) => {
       firestore_project_id: process.env.FIRESTORE_PROJECT_ID || '',
       schedule_enabled: enabled,
       schedule_cron: cronExpression,
+      schedule_start_time: startTime,
+      schedule_end_time: endTime,
+      schedule_interval: interval,
       log_level: process.env.LOG_LEVEL || 'info'
     };
     
