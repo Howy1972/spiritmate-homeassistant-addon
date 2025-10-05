@@ -430,7 +430,7 @@ app.get('/', (_req, res) => {
         </button>
       </div>
 
-      <div class="card">
+  <div class="card">
         <h2>📊 Sync Statistics</h2>
         <div id="statsContainer">
           <div class="info-row">
@@ -772,8 +772,6 @@ app.post('/api/schedule', async (req, res) => {
     // Note: In a real implementation, this would update the Home Assistant config
     // For now, we'll just acknowledge the request
     // The actual schedule is managed via the add-on configuration in Home Assistant
-    
-    showAlert('info', 'Schedule configuration received. Please update via Home Assistant Configuration tab for persistent changes.');
     
     res.json({ 
       ok: true, 
