@@ -576,6 +576,23 @@ app.get('/', (_req, res) => {
     const syncInterval = document.getElementById('syncInterval');
 
     let logsExpanded = false;
+    let formIsDirty = false;
+    
+    // Track form changes to prevent auto-refresh from overwriting unsaved changes
+    function markFormDirty() {
+      formIsDirty = true;
+      saveScheduleBtn.style.boxShadow = '0 0 0 2px #c9a96e';
+    }
+    
+    function markFormClean() {
+      formIsDirty = false;
+      saveScheduleBtn.style.boxShadow = '';
+    }
+    
+    scheduleEnabled.addEventListener('change', markFormDirty);
+    startTime.addEventListener('change', markFormDirty);
+    endTime.addEventListener('change', markFormDirty);
+    syncInterval.addEventListener('change', markFormDirty);
 
     function showAlert(type, message) {
       const alert = document.createElement('div');
@@ -639,8 +656,8 @@ app.get('/', (_req, res) => {
           scheduleStatus.className = 'status-value pending';
         }
 
-        // Load schedule config
-        if (data.schedule) {
+        // Load schedule config (only if form is not dirty to avoid overwriting user changes)
+        if (data.schedule && !formIsDirty) {
           scheduleEnabled.checked = data.schedule.enabled || false;
           if (data.schedule.startTime) startTime.value = data.schedule.startTime;
           if (data.schedule.endTime) endTime.value = data.schedule.endTime;
@@ -727,6 +744,9 @@ app.get('/', (_req, res) => {
         const data = await response.json();
         
         if (data.ok) {
+          // Mark form as clean after successful save
+          markFormClean();
+          
           if (data.needsRestart) {
             showAlert('info', '⚠️ Schedule saved! Add-on will restart in a few seconds...');
             addLog('Schedule saved. Add-on restarting to apply changes...');
@@ -807,6 +827,7 @@ app.get('/', (_req, res) => {
           } else {
             showAlert('success', '✓ Schedule saved successfully!');
             addLog('Schedule configuration saved');
+            markFormClean();
             saveScheduleBtn.disabled = false;
             saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
             
@@ -1015,6 +1036,29 @@ app.post('/api/schedule', async (req, res) => {
     
     const result = await response.json();
     console.log('[API] Supervisor API response:', result);
+    
+    // Now trigger the add-on restart so the new cron schedule takes effect
+    console.log('[API] Triggering add-on restart...');
+    const restartUrl = 'http://supervisor/addons/self/restart';
+    
+    try {
+      const restartResponse = await fetch(restartUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + supervisorToken,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!restartResponse.ok) {
+        console.warn('[API] Restart request returned status:', restartResponse.status);
+      } else {
+        console.log('[API] Restart triggered successfully');
+      }
+    } catch (restartError) {
+      console.warn('[API] Could not trigger restart:', restartError);
+      // Don't fail the whole operation if restart fails - user can manually restart
+    }
     
     res.json({ 
       ok: true, 
