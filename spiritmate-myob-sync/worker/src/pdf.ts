@@ -1,5 +1,6 @@
-import * as pdfParse from 'pdf-parse';
 import { ParsedInvoice, ParsedInvoiceItem } from './types';
+
+const pdfParse = require('pdf-parse');
 
 /**
  * Extract invoice number from PDF text
@@ -362,7 +363,7 @@ export async function parsePdfInvoice(pdfBuffer: Buffer): Promise<ParsedInvoice 
   try {
     console.log(`[PDF] Parsing PDF buffer of ${pdfBuffer.length} bytes`);
     
-    const pdfData = await (pdfParse as any).default(pdfBuffer);
+    const pdfData = await pdfParse(pdfBuffer);
     const text = pdfData.text;
     
     console.log(`[PDF] Extracted ${text.length} characters from PDF`);
