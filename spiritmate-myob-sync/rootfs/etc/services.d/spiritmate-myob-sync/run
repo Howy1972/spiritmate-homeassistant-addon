@@ -106,17 +106,28 @@ echo "===========================================" >> /tmp/cron.log
 EOF
   chmod +x /tmp/sync-cron.sh
   
-  # Test the cron script manually to verify it works
+  # Fix cron expression for BusyBox cron compatibility
+  # Replace */N with * since BusyBox cron has limited support for step values
+  CRON_FIXED="${SCHEDULE_CRON//\*\/1 /\* }"
+  CRON_FIXED="${CRON_FIXED//\*\/5 /\*\/5 }"
+  CRON_FIXED="${CRON_FIXED//\*\/15 /\*\/15 }"
+  CRON_FIXED="${CRON_FIXED//\*\/30 /\*\/30 }"
+  
+  # Test the cron script manually to verify it works (run in background and don't wait)
   bashio::log.info "Testing cron script execution..."
-  /tmp/sync-cron.sh &
+  nohup /tmp/sync-cron.sh >/dev/null 2>&1 &
   
   # Write crontab - simple format for BusyBox cron
   echo "SHELL=/bin/bash" > /etc/crontabs/root
   echo "TZ=${TZ}" >> /etc/crontabs/root
-  echo "${SCHEDULE_CRON} /tmp/sync-cron.sh" >> /etc/crontabs/root
+  echo "${CRON_FIXED} /tmp/sync-cron.sh" >> /etc/crontabs/root
   
   bashio::log.info "Crontab contents:"
   cat /etc/crontabs/root
+  
+  # Kill any existing crond processes to avoid duplicates
+  pkill crond 2>/dev/null || true
+  sleep 1
   
   # Start crond in foreground (don't background it - s6 will manage it)
   bashio::log.info "Starting crond daemon..."

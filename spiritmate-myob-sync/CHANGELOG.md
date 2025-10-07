@@ -2,6 +2,12 @@
 
 ## 2.6.6
 
+- **FIXED**: Changed */1 to * in cron expression for BusyBox cron compatibility (*/1 not supported)
+- Kill any existing crond processes before starting to prevent duplicates
+- Use nohup for test run to prevent blocking crond startup
+
+## 2.6.7
+
 - Ready for future updates
 
 ## 2.6.5
