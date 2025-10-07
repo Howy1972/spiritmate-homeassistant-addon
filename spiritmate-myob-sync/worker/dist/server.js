@@ -631,6 +631,10 @@ app.get('/', (_req, res) => {
           <span>💾</span>
           <span>Save Schedule</span>
         </button>
+        <button id="diagnosticsBtn" class="btn-secondary" style="margin-left: 10px;">
+          <span>🔍</span>
+          <span>Check Cron Status</span>
+        </button>
 
         <div class="config-note">
           <strong>Note:</strong> Changes are saved to Home Assistant configuration and persist across restarts. 
@@ -668,6 +672,7 @@ app.get('/', (_req, res) => {
     
     const scheduleEnabled = document.getElementById('scheduleEnabled');
     const saveScheduleBtn = document.getElementById('saveScheduleBtn');
+    const diagnosticsBtn = document.getElementById('diagnosticsBtn');
     const startTime = document.getElementById('startTime');
     const endTime = document.getElementById('endTime');
     const syncInterval = document.getElementById('syncInterval');
@@ -873,7 +878,7 @@ app.get('/', (_req, res) => {
               showAlert('info', '🔄 Reconnecting after restart...');
             }, 3000);
             
-            // Try to reconnect after restart (poll every 2 seconds)
+            // Try to reconnect after restart (poll every 5 seconds)
             let reconnectAttempts = 0;
             const reconnectInterval = setInterval(async () => {
               reconnectAttempts++;
@@ -920,7 +925,7 @@ app.get('/', (_req, res) => {
                   saveScheduleBtn.innerHTML = '<span>💾</span><span>Save Schedule</span>';
                 }
               }
-            }, 2000);
+            }, 5000);
           } else {
             showAlert('success', '✓ Schedule saved successfully!');
             addLog('Schedule configuration saved');
@@ -965,14 +970,48 @@ app.get('/', (_req, res) => {
       checkStatus();
     });
     saveScheduleBtn.addEventListener('click', saveSchedule);
+    diagnosticsBtn.addEventListener('click', async () => {
+      try {
+        addLog('Fetching cron diagnostics...');
+        const response = await fetch('api/diagnostics');
+        const data = await response.json();
+        
+        // Display in a formatted way
+        addLog('=== DIAGNOSTICS ===');
+        addLog('Schedule Enabled: ' + data.environment.SCHEDULE_ENABLED);
+        addLog('Cron Expression: ' + data.environment.SCHEDULE_CRON);
+        addLog('Start Time: ' + data.environment.SCHEDULE_START_TIME);
+        addLog('End Time: ' + data.environment.SCHEDULE_END_TIME);
+        addLog('Interval (minutes): ' + data.environment.SCHEDULE_INTERVAL);
+        addLog('---');
+        addLog('Crond Running: ' + data.cron.crondRunning);
+        if (data.cron.cronTab) {
+          addLog('Crontab: ' + data.cron.cronTab.trim());
+        } else if (data.cron.error) {
+          addLog('Crontab Error: ' + data.cron.error);
+        }
+        if (data.cron.cronScript) {
+          addLog('Cron script exists at /tmp/sync-cron.sh');
+        } else if (data.cron.cronScriptError) {
+          addLog('Cron script error: ' + data.cron.cronScriptError);
+        }
+        addLog('===================');
+        
+        showAlert('info', '🔍 Diagnostics logged - check the log panel');
+      } catch (error) {
+        addLog('✗ Diagnostics failed: ' + error);
+        showAlert('error', '✗ Failed to fetch diagnostics');
+      }
+    });
 
     // Initial status check
     checkStatus();
     
-    // Auto-refresh every 15 seconds (but can be paused during save/restart)
-    let autoRefreshInterval = setInterval(checkStatus, 15000);
+    // No auto-refresh - user can manually refresh when needed
+    // Auto-refresh is only enabled temporarily during operations like reconnection
+    let autoRefreshInterval = null;
     
-    // Expose function to pause/resume auto-refresh
+    // Expose function to pause/resume auto-refresh (used during restart operations)
     window.pauseAutoRefresh = function() {
       if (autoRefreshInterval) {
         clearInterval(autoRefreshInterval);
@@ -981,9 +1020,8 @@ app.get('/', (_req, res) => {
     };
     
     window.resumeAutoRefresh = function() {
-      if (!autoRefreshInterval) {
-        autoRefreshInterval = setInterval(checkStatus, 15000);
-      }
+      // Don't auto-resume - manual refresh only
+      // This function exists for compatibility but does nothing
     };
   </script>
 </body>
@@ -1154,6 +1192,55 @@ app.post('/api/schedule', async (req, res) => {
     }
     catch (error) {
         console.error('[API] Schedule save failed:', error);
+        res.status(500).json({ ok: false, error: String(error) });
+    }
+});
+// API: Diagnostic endpoint to check cron status
+app.get('/api/diagnostics', async (_req, res) => {
+    try {
+        const { execSync } = require('child_process');
+        const diagnostics = {
+            environment: {
+                SCHEDULE_ENABLED: process.env.SCHEDULE_ENABLED,
+                SCHEDULE_CRON: process.env.SCHEDULE_CRON,
+                SCHEDULE_START_TIME: process.env.SCHEDULE_START_TIME,
+                SCHEDULE_END_TIME: process.env.SCHEDULE_END_TIME,
+                SCHEDULE_INTERVAL: process.env.SCHEDULE_INTERVAL,
+            },
+            cron: {
+                crondRunning: false,
+                cronTab: null,
+                cronScript: null,
+                error: null
+            }
+        };
+        // Check if crond is running
+        try {
+            const crondCheck = execSync('pgrep crond', { encoding: 'utf-8' });
+            diagnostics.cron.crondRunning = !!crondCheck.trim();
+        }
+        catch (e) {
+            diagnostics.cron.crondRunning = false;
+        }
+        // Read crontab
+        try {
+            const cronTab = execSync('cat /etc/crontabs/root', { encoding: 'utf-8' });
+            diagnostics.cron.cronTab = cronTab;
+        }
+        catch (e) {
+            diagnostics.cron.error = 'Cannot read /etc/crontabs/root: ' + String(e);
+        }
+        // Read cron script
+        try {
+            const cronScript = execSync('cat /tmp/sync-cron.sh', { encoding: 'utf-8' });
+            diagnostics.cron.cronScript = cronScript;
+        }
+        catch (e) {
+            diagnostics.cron.cronScriptError = 'Cannot read /tmp/sync-cron.sh: ' + String(e);
+        }
+        res.json(diagnostics);
+    }
+    catch (error) {
         res.status(500).json({ ok: false, error: String(error) });
     }
 });
