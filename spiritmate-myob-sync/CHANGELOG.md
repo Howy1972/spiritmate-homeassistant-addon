@@ -1,5 +1,11 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 2.7.0
+
+- Simplified scheduling: remove UI/options and run worker every minute
+- Disable ingress UI; addon now operates headless with fixed cron
+- Internal: single-instance foreground `crond`, minimal env
+
 ## 2.6.10
 
 - Version bump to publish latest cron fixes and timezone persistence so HA detects update

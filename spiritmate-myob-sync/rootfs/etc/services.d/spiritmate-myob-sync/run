@@ -3,7 +3,7 @@
 # SpiritMate MYOB Sync - service runner
 # ==============================================================================
 
-# Read configuration from add-on options
+# Read configuration from add-on options (simplified)
 IMAP_HOST=$(bashio::config 'imap_host')
 IMAP_PORT=$(bashio::config 'imap_port')
 IMAP_USER=$(bashio::config 'imap_user')
@@ -15,19 +15,9 @@ SUBJECT_PREFIX=$(bashio::config 'subject_prefix')
 LABEL_PROCESSED=$(bashio::config 'label_processed')
 
 FIRESTORE_PROJECT_ID=$(bashio::config 'firestore_project_id')
-
-SCHEDULE_ENABLED=$(bashio::config 'schedule_enabled')
-SCHEDULE_CRON=$(bashio::config 'schedule_cron')
-SCHEDULE_START_TIME=$(bashio::config 'schedule_start_time')
-SCHEDULE_END_TIME=$(bashio::config 'schedule_end_time')
-SCHEDULE_INTERVAL=$(bashio::config 'schedule_interval')
-TIMEZONE=$(bashio::config 'timezone')
 LOG_LEVEL=$(bashio::config 'log_level')
 
-# Set timezone
-export TZ="${TIMEZONE}"
-# Also persist TZ for BusyBox utilities (crond reads /etc/TZ)
-echo -n "${TZ}" > /etc/TZ
+# No user-configurable timezone; cron runs every minute so TZ is irrelevant
 
 # Validate required configuration
 if bashio::var.is_empty "${IMAP_HOST}" || \
@@ -40,16 +30,11 @@ if bashio::var.is_empty "${IMAP_HOST}" || \
   exit 1
 fi
 
-# Export basic env vars that server needs (but NOT GOOGLE_APPLICATION_CREDENTIALS yet)
+# Export basic env vars for worker
 export IMAP_HOST IMAP_PORT IMAP_USER IMAP_PASS IMAP_MAILBOX
 export FROM_EXACT SUBJECT_PREFIX LABEL_PROCESSED
 export FIRESTORE_PROJECT_ID LOG_LEVEL
-export SCHEDULE_ENABLED SCHEDULE_CRON SCHEDULE_START_TIME SCHEDULE_END_TIME SCHEDULE_INTERVAL
-export TZ
-
-# Start ingress/status/upload server early WITHOUT credentials env var
-# This prevents Google Cloud SDK from auto-loading the credentials file
-PORT=8099 node /app/dist/server.js &
+unset SCHEDULE_ENABLED SCHEDULE_CRON SCHEDULE_START_TIME SCHEDULE_END_TIME SCHEDULE_INTERVAL TIMEZONE TZ
 
 # Check Firestore credentials (wait for upload if missing)
 if [[ ! -f "/share/spiritmate/service-account.json" ]]; then
@@ -72,14 +57,7 @@ export GOOGLE_APPLICATION_CREDENTIALS
 
 bashio::log.info "Starting MYOB sync worker"
 bashio::log.info "IMAP: ${IMAP_USER}@${IMAP_HOST}:${IMAP_PORT}/${IMAP_MAILBOX:=INBOX}"
-bashio::log.info "Schedule enabled: ${SCHEDULE_ENABLED} (${SCHEDULE_CRON})"
-
-# Server already started above (without GOOGLE_APPLICATION_CREDENTIALS set)
-
-if [[ "${SCHEDULE_ENABLED}" == "true" ]]; then
-  bashio::log.info "Setting up scheduled sync with cron"
-  bashio::log.info "Timezone: ${TZ}"
-  bashio::log.info "Schedule: ${SCHEDULE_CRON}"
+bashio::log.info "Schedule: every 1 minute (fixed)"
   
   # Create cron job with full environment
   cat > /tmp/sync-cron.sh <<EOF
@@ -108,8 +86,8 @@ echo "===========================================" >> /tmp/cron.log
 EOF
   chmod +x /tmp/sync-cron.sh
   
-  # Fix cron expression for BusyBox - replace */1 with *
-  CRON_FIXED="${SCHEDULE_CRON//\*\/1 /\* }"
+  # Fixed cron: every minute
+  CRON_FIXED="* * * * *"
   
   # BusyBox cron needs just: minute hour day month dayofweek command
   # NO environment variables in crontab
@@ -120,9 +98,9 @@ EOF
   
   bashio::log.info "Crontab: ${CRON_FIXED} /tmp/sync-cron.sh"
   
-  # Test run
-  bashio::log.info "Running test sync..."
-  /tmp/sync-cron.sh &
+  # Test run (non-blocking)
+  bashio::log.info "Running initial test sync..."
+  nohup /tmp/sync-cron.sh >/dev/null 2>&1 &
   
   # Start crond in foreground as the main service process (single instance)
   bashio::log.info "Starting crond (foreground)..."
@@ -130,10 +108,4 @@ EOF
   pkill crond >/dev/null 2>&1 || true
   # Explicitly point to crontab dir and enable logfile for diagnostics
   exec crond -f -l 8 -L /tmp/cron-execution.log -c /etc/crontabs
-else
-  bashio::log.info "Schedule disabled. UI is available; you can trigger runs from the panel. Running worker once now and keeping service alive."
-  node /app/dist/index.js || bashio::log.warning "Initial run exited with code $?"
-  while true; do
-    sleep 3600
-  done
-fi
+  
