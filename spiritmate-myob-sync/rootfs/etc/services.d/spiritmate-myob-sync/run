@@ -63,9 +63,7 @@ bashio::log.info "Schedule: every 1 minute (fixed)"
   cat > /tmp/sync-cron.sh <<EOF
 #!/bin/bash
 echo "===========================================" >> /tmp/cron.log
-echo "\$(TZ='${TZ}' date '+%Y-%m-%d %H:%M:%S %Z') - Cron job STARTED" >> /tmp/cron.log
-export TZ="${TZ}"
-echo "Timezone: \${TZ}" >> /tmp/cron.log
+echo "\$(date '+%Y-%m-%d %H:%M:%S %Z') - Cron job STARTED" >> /tmp/cron.log
 echo "Current time: \$(date)" >> /tmp/cron.log
 export IMAP_HOST="${IMAP_HOST}"
 export IMAP_PORT="${IMAP_PORT}"
@@ -81,7 +79,7 @@ export LOG_LEVEL="${LOG_LEVEL}"
 echo "About to run sync worker..." >> /tmp/cron.log
 cd /app && node dist/index.js >> /tmp/cron.log 2>&1
 EXIT_CODE=\$?
-echo "\$(TZ='${TZ}' date '+%Y-%m-%d %H:%M:%S %Z') - Cron job COMPLETED with exit code \${EXIT_CODE}" >> /tmp/cron.log
+echo "\$(date '+%Y-%m-%d %H:%M:%S %Z') - Cron job COMPLETED with exit code \${EXIT_CODE}" >> /tmp/cron.log
 echo "===========================================" >> /tmp/cron.log
 EOF
   chmod +x /tmp/sync-cron.sh
