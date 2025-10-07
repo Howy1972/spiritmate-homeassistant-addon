@@ -1,5 +1,13 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 2.6.1
+
+- Ready for future updates
+
+## 2.6.0
+
+- Added Adelaide (ACST), Brisbane, and Darwin to timezone dropdown
+
 ## 2.5.9
 
 - Ready for future updates
