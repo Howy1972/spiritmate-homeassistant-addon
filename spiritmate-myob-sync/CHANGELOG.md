@@ -2,7 +2,11 @@
 
 ## 2.6.3
 
-- Ready for future updates
+- **FIXED**: Cron daemon not executing scheduled jobs (timezone not being set in crontab, multiple crond instances)
+- Added TZ variable directly to crontab for BusyBox cron compatibility
+- Test cron script execution on startup to verify it works
+- Use exec for crond to prevent duplicate processes
+- Enhanced startup logging to show crontab contents
 
 ## 2.6.2
 

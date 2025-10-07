@@ -75,11 +75,15 @@ bashio::log.info "Schedule enabled: ${SCHEDULE_ENABLED} (${SCHEDULE_CRON})"
 # Server already started above (without GOOGLE_APPLICATION_CREDENTIALS set)
 
 if [[ "${SCHEDULE_ENABLED}" == "true" ]]; then
+  bashio::log.info "Setting up scheduled sync with cron"
+  bashio::log.info "Timezone: ${TZ}"
+  bashio::log.info "Schedule: ${SCHEDULE_CRON}"
+  
   # Create cron job with full environment
   cat > /tmp/sync-cron.sh <<EOF
 #!/bin/bash
 echo "===========================================" >> /tmp/cron.log
-echo "\$(date '+%Y-%m-%d %H:%M:%S') - Cron job STARTED" >> /tmp/cron.log
+echo "\$(TZ='${TZ}' date '+%Y-%m-%d %H:%M:%S %Z') - Cron job STARTED" >> /tmp/cron.log
 export TZ="${TZ}"
 echo "Timezone: \${TZ}" >> /tmp/cron.log
 echo "Current time: \$(date)" >> /tmp/cron.log
@@ -97,22 +101,26 @@ export LOG_LEVEL="${LOG_LEVEL}"
 echo "About to run sync worker..." >> /tmp/cron.log
 cd /app && node dist/index.js >> /tmp/cron.log 2>&1
 EXIT_CODE=\$?
-echo "\$(date '+%Y-%m-%d %H:%M:%S') - Cron job COMPLETED with exit code \${EXIT_CODE}" >> /tmp/cron.log
+echo "\$(TZ='${TZ}' date '+%Y-%m-%d %H:%M:%S %Z') - Cron job COMPLETED with exit code \${EXIT_CODE}" >> /tmp/cron.log
 echo "===========================================" >> /tmp/cron.log
 EOF
   chmod +x /tmp/sync-cron.sh
   
-  # Write crontab and enable logging
-  echo "${SCHEDULE_CRON} /tmp/sync-cron.sh >> /tmp/cron-execution.log 2>&1" > /etc/crontabs/root
+  # Test the cron script manually to verify it works
+  bashio::log.info "Testing cron script execution..."
+  /tmp/sync-cron.sh &
   
-  # Start crond with verbose logging (level 0 = most verbose)
-  bashio::log.info "Starting crond with schedule: ${SCHEDULE_CRON}"
-  bashio::log.info "Cron will log to: /tmp/cron.log and /tmp/cron-execution.log"
-  crond -f -l 0 &
-  while true; do
-    sleep 300
-    pgrep crond >/dev/null || crond -f -l 2 &
-  done
+  # Write crontab - use simple format for BusyBox cron
+  echo "SHELL=/bin/bash" > /etc/crontabs/root
+  echo "TZ=${TZ}" >> /etc/crontabs/root
+  echo "${SCHEDULE_CRON} /tmp/sync-cron.sh 2>&1 | tee -a /tmp/cron-execution.log" >> /etc/crontabs/root
+  
+  bashio::log.info "Crontab contents:"
+  cat /etc/crontabs/root
+  
+  # Start crond in foreground (don't background it - s6 will manage it)
+  bashio::log.info "Starting crond daemon..."
+  exec crond -f -l 0
 else
   bashio::log.info "Schedule disabled. UI is available; you can trigger runs from the panel. Running worker once now and keeping service alive."
   node /app/dist/index.js || bashio::log.warning "Initial run exited with code $?"
