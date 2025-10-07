@@ -59,51 +59,17 @@ bashio::log.info "Starting MYOB sync worker"
 bashio::log.info "IMAP: ${IMAP_USER}@${IMAP_HOST}:${IMAP_PORT}/${IMAP_MAILBOX:=INBOX}"
 bashio::log.info "Schedule: every 1 minute (fixed)"
   
-  # Create cron job with full environment
-  cat > /tmp/sync-cron.sh <<EOF
-#!/bin/bash
-echo "===========================================" >> /tmp/cron.log
-echo "\$(date '+%Y-%m-%d %H:%M:%S %Z') - Cron job STARTED" >> /tmp/cron.log
-echo "Current time: \$(date)" >> /tmp/cron.log
-export IMAP_HOST="${IMAP_HOST}"
-export IMAP_PORT="${IMAP_PORT}"
-export IMAP_USER="${IMAP_USER}"
-export IMAP_PASS="${IMAP_PASS}"
-export IMAP_MAILBOX="${IMAP_MAILBOX}"
-export FROM_EXACT="${FROM_EXACT}"
-export SUBJECT_PREFIX="${SUBJECT_PREFIX}"
-export LABEL_PROCESSED="${LABEL_PROCESSED}"
-export FIRESTORE_PROJECT_ID="${FIRESTORE_PROJECT_ID}"
-export GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS}"
-export LOG_LEVEL="${LOG_LEVEL}"
-echo "About to run sync worker..." >> /tmp/cron.log
-cd /app && node dist/index.js >> /tmp/cron.log 2>&1
-EXIT_CODE=\$?
-echo "\$(date '+%Y-%m-%d %H:%M:%S %Z') - Cron job COMPLETED with exit code \${EXIT_CODE}" >> /tmp/cron.log
-echo "===========================================" >> /tmp/cron.log
-EOF
-  chmod +x /tmp/sync-cron.sh
-  
-  # Fixed cron: every minute
-  CRON_FIXED="* * * * *"
-  
-  # BusyBox cron needs just: minute hour day month dayofweek command
-  # NO environment variables in crontab
-  echo "${CRON_FIXED} /tmp/sync-cron.sh" > /etc/crontabs/root
-  # Ensure correct ownership and permissions so crond will load it
-  chown root:root /etc/crontabs/root
-  chmod 600 /etc/crontabs/root
-  
-  bashio::log.info "Crontab: ${CRON_FIXED} /tmp/sync-cron.sh"
-  
-  # Test run (non-blocking)
-  bashio::log.info "Running initial test sync..."
-  nohup /tmp/sync-cron.sh >/dev/null 2>&1 &
-  
-  # Start crond in foreground as the main service process (single instance)
-  bashio::log.info "Starting crond (foreground)..."
-  # Kill any existing instance to avoid duplicates
-  pkill crond >/dev/null 2>&1 || true
-  # Explicitly point to crontab dir and enable logfile for diagnostics
-  exec crond -f -l 8 -L /tmp/cron-execution.log -c /etc/crontabs
+  # Deterministic loop: run worker every 60 seconds (no cron)
+  bashio::log.info "Starting 60s worker loop (no cron)..."
+  while true; do
+    echo "===========================================" >> /tmp/cron.log
+    echo "$(date '+%Y-%m-%d %H:%M:%S %Z') - Loop STARTED" >> /tmp/cron.log
+    echo "Current time: $(date)" >> /tmp/cron.log
+    echo "About to run sync worker..." >> /tmp/cron.log
+    cd /app && node dist/index.js >> /tmp/cron.log 2>&1
+    EXIT_CODE=$?
+    echo "$(date '+%Y-%m-%d %H:%M:%S %Z') - Loop COMPLETED with exit code ${EXIT_CODE}" >> /tmp/cron.log
+    echo "===========================================" >> /tmp/cron.log
+    sleep 60
+  done
   
