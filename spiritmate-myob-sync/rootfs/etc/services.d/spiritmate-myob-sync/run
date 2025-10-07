@@ -73,6 +73,7 @@ if [[ "${SCHEDULE_ENABLED}" == "true" ]]; then
   # Create cron job with full environment
   cat > /tmp/sync-cron.sh <<EOF
 #!/bin/bash
+echo "\$(date '+%Y-%m-%d %H:%M:%S') - Cron job triggered" >> /tmp/cron.log
 export IMAP_HOST="${IMAP_HOST}"
 export IMAP_PORT="${IMAP_PORT}"
 export IMAP_USER="${IMAP_USER}"
@@ -84,14 +85,15 @@ export LABEL_PROCESSED="${LABEL_PROCESSED}"
 export FIRESTORE_PROJECT_ID="${FIRESTORE_PROJECT_ID}"
 export GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS}"
 export LOG_LEVEL="${LOG_LEVEL}"
-cd /app && node dist/index.js
+cd /app && node dist/index.js >> /tmp/cron.log 2>&1
+echo "\$(date '+%Y-%m-%d %H:%M:%S') - Cron job completed with exit code \$?" >> /tmp/cron.log
 EOF
   chmod +x /tmp/sync-cron.sh
   echo "${SCHEDULE_CRON} /tmp/sync-cron.sh" > /etc/crontabs/root
-  crond -f &
+  crond -f -l 2 &
   while true; do
     sleep 300
-    pgrep crond >/dev/null || crond -f &
+    pgrep crond >/dev/null || crond -f -l 2 &
   done
 else
   bashio::log.info "Schedule disabled. UI is available; you can trigger runs from the panel. Running worker once now and keeping service alive."

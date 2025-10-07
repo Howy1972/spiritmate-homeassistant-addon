@@ -2,10 +2,12 @@
 
 ## 2.5.7
 
+- **FIXED**: Cron schedule generation excluding the end hour (e.g., 10 PM sync was missing from schedule)
+- Added cron execution logging to /tmp/cron.log to track if scheduled jobs are actually running
+- Enhanced diagnostics to show cron execution history and crond process status
 - Reduced auto-refresh polling from 15s to 60s, then removed entirely (manual refresh only)
 - Reduced reconnection polling from 2s to 5s during addon restart
 - Added diagnostics endpoint and "Check Cron Status" button to troubleshoot scheduled sync issues
-- Added detailed cron diagnostics showing: schedule config, crond status, crontab contents, and cron script
 
 ## 2.5.6
 

@@ -995,6 +995,13 @@ app.get('/', (_req, res) => {
         } else if (data.cron.cronScriptError) {
           addLog('Cron script error: ' + data.cron.cronScriptError);
         }
+        if (data.cron.cronLog) {
+          addLog('--- CRON EXECUTION LOG ---');
+          addLog(data.cron.cronLog);
+        }
+        if (data.cron.crondProcess) {
+          addLog('Crond Process: ' + data.cron.crondProcess);
+        }
         addLog('===================');
         
         showAlert('info', '🔍 Diagnostics logged - check the log panel');
@@ -1114,7 +1121,7 @@ app.post('/api/schedule', async (req, res) => {
         // Hourly or more: generate hour-based cron
         const hourInterval = Math.floor(interval / 60);
         const hours = [];
-        for (let h = startHour; h < endHour; h += hourInterval) {
+        for (let h = startHour; h <= endHour; h += hourInterval) {
           hours.push(h);
         }
         if (hours.length > 0) {
@@ -1252,6 +1259,22 @@ app.get('/api/diagnostics', async (_req, res) => {
       diagnostics.cron.cronScript = cronScript;
     } catch (e) {
       diagnostics.cron.cronScriptError = 'Cannot read /tmp/sync-cron.sh: ' + String(e);
+    }
+    
+    // Read cron log (to see if cron has actually tried to run)
+    try {
+      const cronLog = execSync('tail -100 /tmp/cron.log 2>/dev/null || echo "No cron log yet"', { encoding: 'utf-8' });
+      diagnostics.cron.cronLog = cronLog;
+    } catch (e) {
+      diagnostics.cron.cronLogError = 'Cannot read cron log: ' + String(e);
+    }
+    
+    // Check crond log level
+    try {
+      const crondPs = execSync('ps aux | grep crond | grep -v grep', { encoding: 'utf-8' });
+      diagnostics.cron.crondProcess = crondPs.trim();
+    } catch (e) {
+      diagnostics.cron.crondProcess = 'No crond process found';
     }
     
     res.json(diagnostics);
