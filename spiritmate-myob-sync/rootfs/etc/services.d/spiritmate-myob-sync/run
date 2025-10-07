@@ -21,7 +21,11 @@ SCHEDULE_CRON=$(bashio::config 'schedule_cron')
 SCHEDULE_START_TIME=$(bashio::config 'schedule_start_time')
 SCHEDULE_END_TIME=$(bashio::config 'schedule_end_time')
 SCHEDULE_INTERVAL=$(bashio::config 'schedule_interval')
+TIMEZONE=$(bashio::config 'timezone')
 LOG_LEVEL=$(bashio::config 'log_level')
+
+# Set timezone
+export TZ="${TIMEZONE}"
 
 # Validate required configuration
 if bashio::var.is_empty "${IMAP_HOST}" || \
@@ -39,6 +43,7 @@ export IMAP_HOST IMAP_PORT IMAP_USER IMAP_PASS IMAP_MAILBOX
 export FROM_EXACT SUBJECT_PREFIX LABEL_PROCESSED
 export FIRESTORE_PROJECT_ID LOG_LEVEL
 export SCHEDULE_ENABLED SCHEDULE_CRON SCHEDULE_START_TIME SCHEDULE_END_TIME SCHEDULE_INTERVAL
+export TZ
 
 # Start ingress/status/upload server early WITHOUT credentials env var
 # This prevents Google Cloud SDK from auto-loading the credentials file
@@ -73,6 +78,7 @@ if [[ "${SCHEDULE_ENABLED}" == "true" ]]; then
   # Create cron job with full environment
   cat > /tmp/sync-cron.sh <<EOF
 #!/bin/bash
+export TZ="${TZ}"
 echo "\$(date '+%Y-%m-%d %H:%M:%S') - Cron job triggered" >> /tmp/cron.log
 export IMAP_HOST="${IMAP_HOST}"
 export IMAP_PORT="${IMAP_PORT}"

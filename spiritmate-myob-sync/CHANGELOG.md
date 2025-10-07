@@ -1,8 +1,13 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
-## 2.5.8
+## 2.5.9
 
 - Ready for future updates
+
+## 2.5.8
+
+- **FIXED**: Added timezone configuration support (fixes cron not running due to timezone mismatch)
+- Added timezone diagnostics to show container's current time and timezone settings
 
 ## 2.5.7
 
