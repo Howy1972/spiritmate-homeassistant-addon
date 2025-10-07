@@ -1,8 +1,12 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
-## 2.6.1
+## 2.6.2
 
 - Ready for future updates
+
+## 2.6.1
+
+- **FIXED**: Timezone not being saved when changing schedule settings (was reverting to old timezone)
 
 ## 2.6.0
 
