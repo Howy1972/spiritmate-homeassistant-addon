@@ -112,6 +112,9 @@ EOF
   # BusyBox cron needs just: minute hour day month dayofweek command
   # NO environment variables in crontab
   echo "${CRON_FIXED} /tmp/sync-cron.sh" > /etc/crontabs/root
+  # Ensure correct ownership and permissions so crond will load it
+  chown root:root /etc/crontabs/root
+  chmod 600 /etc/crontabs/root
   
   bashio::log.info "Crontab: ${CRON_FIXED} /tmp/sync-cron.sh"
   
@@ -121,7 +124,10 @@ EOF
   
   # Start crond and keep service alive
   bashio::log.info "Starting crond..."
-  crond -f -l 0 &
+  # Kill any existing instance to avoid duplicates
+  pkill crond >/dev/null 2>&1 || true
+  # Explicitly point to crontab dir and enable logfile for diagnostics
+  crond -l 8 -L /tmp/cron-execution.log -c /etc/crontabs &
   
   # Keep service running
   while true; do sleep 3600; done

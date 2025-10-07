@@ -1,5 +1,16 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 2.6.9
+
+- **FIXED**: Ensure BusyBox `crond` loads the crontab by setting strict
+  permissions and ownership on `/etc/crontabs/root` (chmod 600, root:root)
+- **FIXED**: Prevent duplicate cron daemons by killing any existing `crond`
+  process before starting a new one
+- **FIXED**: Start `crond` with explicit crontab directory and enable daemon
+  execution logging (`crond -l 8 -L /tmp/cron-execution.log -c /etc/crontabs`)
+- **ADDED**: Dedicated cron daemon execution log at `/tmp/cron-execution.log`
+  to aid diagnostics alongside `/tmp/cron.log`
+
 ## 2.6.6
 
 - **FIXED**: Changed */1 to * in cron expression for BusyBox cron compatibility (*/1 not supported)
