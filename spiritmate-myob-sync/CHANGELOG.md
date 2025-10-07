@@ -1,8 +1,13 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
-## 2.6.5
+## 2.6.6
 
 - Ready for future updates
+
+## 2.6.5
+
+- **FIXED**: Simplified crontab - removed pipe/tee command that was preventing BusyBox cron from executing
+- Cron now uses simplest possible syntax for maximum compatibility
 
 ## 2.6.4
 

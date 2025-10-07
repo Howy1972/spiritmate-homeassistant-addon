@@ -110,10 +110,10 @@ EOF
   bashio::log.info "Testing cron script execution..."
   /tmp/sync-cron.sh &
   
-  # Write crontab - use simple format for BusyBox cron
+  # Write crontab - simple format for BusyBox cron
   echo "SHELL=/bin/bash" > /etc/crontabs/root
   echo "TZ=${TZ}" >> /etc/crontabs/root
-  echo "${SCHEDULE_CRON} /tmp/sync-cron.sh 2>&1 | tee -a /tmp/cron-execution.log" >> /etc/crontabs/root
+  echo "${SCHEDULE_CRON} /tmp/sync-cron.sh" >> /etc/crontabs/root
   
   bashio::log.info "Crontab contents:"
   cat /etc/crontabs/root
