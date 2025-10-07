@@ -627,6 +627,30 @@ app.get('/', (_req, res) => {
           <div class="form-hint">How often to check for new invoices during active hours</div>
         </div>
 
+        <div class="form-group">
+          <label class="form-label" for="timezone">Timezone</label>
+          <select id="timezone">
+            <option value="UTC">UTC</option>
+            <option value="America/New_York">America/New York (EST/EDT)</option>
+            <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+            <option value="America/Denver">America/Denver (MST/MDT)</option>
+            <option value="America/Los_Angeles">America/Los Angeles (PST/PDT)</option>
+            <option value="America/Toronto">America/Toronto</option>
+            <option value="America/Vancouver">America/Vancouver</option>
+            <option value="Europe/London">Europe/London (GMT/BST)</option>
+            <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+            <option value="Europe/Berlin">Europe/Berlin</option>
+            <option value="Australia/Sydney">Australia/Sydney (AEDT/AEST)</option>
+            <option value="Australia/Melbourne">Australia/Melbourne</option>
+            <option value="Australia/Perth">Australia/Perth (AWST)</option>
+            <option value="Pacific/Auckland">Pacific/Auckland (NZDT/NZST)</option>
+            <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+            <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+            <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+          </select>
+          <div class="form-hint">Timezone for scheduling (cron runs in this timezone)</div>
+        </div>
+
         <button id="saveScheduleBtn" class="btn-primary">
           <span>💾</span>
           <span>Save Schedule</span>
@@ -676,6 +700,7 @@ app.get('/', (_req, res) => {
     const startTime = document.getElementById('startTime');
     const endTime = document.getElementById('endTime');
     const syncInterval = document.getElementById('syncInterval');
+    const timezone = document.getElementById('timezone');
 
     let logsExpanded = false;
     let formIsDirty = false;
@@ -695,6 +720,7 @@ app.get('/', (_req, res) => {
     startTime.addEventListener('change', markFormDirty);
     endTime.addEventListener('change', markFormDirty);
     syncInterval.addEventListener('change', markFormDirty);
+    timezone.addEventListener('change', markFormDirty);
 
     function showAlert(type, message) {
       const alert = document.createElement('div');
@@ -764,6 +790,7 @@ app.get('/', (_req, res) => {
           if (data.schedule.startTime) startTime.value = data.schedule.startTime;
           if (data.schedule.endTime) endTime.value = data.schedule.endTime;
           if (data.schedule.interval) syncInterval.value = data.schedule.interval;
+          if (data.schedule.timezone) timezone.value = data.schedule.timezone;
         }
       } catch (error) {
         systemStatus.textContent = '✗ Error';
@@ -834,7 +861,8 @@ app.get('/', (_req, res) => {
           enabled: scheduleEnabled.checked,
           startTime: startTime.value,
           endTime: endTime.value,
-          interval: parseInt(syncInterval.value, 10)
+          interval: parseInt(syncInterval.value, 10),
+          timezone: timezone.value
         };
         
         const response = await fetch('api/schedule', {
@@ -984,6 +1012,11 @@ app.get('/', (_req, res) => {
         addLog('End Time: ' + data.environment.SCHEDULE_END_TIME);
         addLog('Interval (minutes): ' + data.environment.SCHEDULE_INTERVAL);
         addLog('---');
+        addLog('Current Time (UTC): ' + data.system.currentTime);
+        addLog('Local Time: ' + data.system.localTime);
+        addLog('Timezone: ' + data.system.timezone);
+        addLog('TZ env var: ' + data.environment.TZ);
+        addLog('---');
         addLog('Crond Running: ' + data.cron.crondRunning);
         if (data.cron.cronTab) {
           addLog('Crontab: ' + data.cron.cronTab.trim());
@@ -1058,6 +1091,7 @@ app.get('/api/status', (_req, res) => {
             startTime: startTime,
             endTime: endTime,
             interval: interval,
+            timezone: process.env.TZ || 'UTC',
             cron: scheduleCron
         };
         const response = {
@@ -1096,7 +1130,7 @@ app.post('/api/run', async (_req, res) => {
 app.post('/api/schedule', async (req, res) => {
     try {
         console.log('[API] Schedule config update:', req.body);
-        const { enabled, startTime, endTime, interval } = req.body;
+        const { enabled, startTime, endTime, interval, timezone: tz } = req.body;
         // Parse start/end times
         const startHour = parseInt(startTime.split(':')[0], 10);
         const endHour = parseInt(endTime.split(':')[0], 10);
@@ -1142,6 +1176,7 @@ app.post('/api/schedule', async (req, res) => {
             schedule_start_time: startTime,
             schedule_end_time: endTime,
             schedule_interval: interval,
+            timezone: process.env.TZ || 'UTC',
             log_level: process.env.LOG_LEVEL || 'info'
         };
         // Call Home Assistant Supervisor API to update add-on options
@@ -1213,6 +1248,12 @@ app.get('/api/diagnostics', async (_req, res) => {
                 SCHEDULE_START_TIME: process.env.SCHEDULE_START_TIME,
                 SCHEDULE_END_TIME: process.env.SCHEDULE_END_TIME,
                 SCHEDULE_INTERVAL: process.env.SCHEDULE_INTERVAL,
+                TZ: process.env.TZ || 'Not set'
+            },
+            system: {
+                currentTime: new Date().toISOString(),
+                localTime: new Date().toLocaleString(),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
             },
             cron: {
                 crondRunning: false,
