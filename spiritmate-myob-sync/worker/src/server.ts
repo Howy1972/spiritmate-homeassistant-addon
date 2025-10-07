@@ -1186,7 +1186,7 @@ app.post('/api/schedule', async (req, res) => {
       schedule_start_time: startTime,
       schedule_end_time: endTime,
       schedule_interval: interval,
-      timezone: process.env.TZ || 'UTC',
+      timezone: tz || process.env.TZ || 'UTC',
       log_level: process.env.LOG_LEVEL || 'info'
     };
     
