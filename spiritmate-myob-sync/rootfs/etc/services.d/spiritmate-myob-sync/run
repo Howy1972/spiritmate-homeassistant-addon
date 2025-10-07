@@ -58,9 +58,11 @@ export GOOGLE_APPLICATION_CREDENTIALS
 bashio::log.info "Starting MYOB sync worker"
 bashio::log.info "IMAP: ${IMAP_USER}@${IMAP_HOST}:${IMAP_PORT}/${IMAP_MAILBOX:=INBOX}"
 bashio::log.info "Schedule: every 1 minute (fixed)"
+PORT=8099 node /app/dist/server.js &
   
   # Deterministic loop: run worker every 60 seconds (no cron)
   bashio::log.info "Starting 60s worker loop (no cron)..."
+  LOOP_INTERVAL=${LOOP_INTERVAL:-60}
   while true; do
     echo "===========================================" >> /tmp/cron.log
     echo "$(date '+%Y-%m-%d %H:%M:%S %Z') - Loop STARTED" >> /tmp/cron.log
@@ -70,6 +72,6 @@ bashio::log.info "Schedule: every 1 minute (fixed)"
     EXIT_CODE=$?
     echo "$(date '+%Y-%m-%d %H:%M:%S %Z') - Loop COMPLETED with exit code ${EXIT_CODE}" >> /tmp/cron.log
     echo "===========================================" >> /tmp/cron.log
-    sleep 60
+    sleep ${LOOP_INTERVAL}
   done
   
