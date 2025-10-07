@@ -78,8 +78,11 @@ if [[ "${SCHEDULE_ENABLED}" == "true" ]]; then
   # Create cron job with full environment
   cat > /tmp/sync-cron.sh <<EOF
 #!/bin/bash
+echo "===========================================" >> /tmp/cron.log
+echo "\$(date '+%Y-%m-%d %H:%M:%S') - Cron job STARTED" >> /tmp/cron.log
 export TZ="${TZ}"
-echo "\$(date '+%Y-%m-%d %H:%M:%S') - Cron job triggered" >> /tmp/cron.log
+echo "Timezone: \${TZ}" >> /tmp/cron.log
+echo "Current time: \$(date)" >> /tmp/cron.log
 export IMAP_HOST="${IMAP_HOST}"
 export IMAP_PORT="${IMAP_PORT}"
 export IMAP_USER="${IMAP_USER}"
@@ -91,12 +94,21 @@ export LABEL_PROCESSED="${LABEL_PROCESSED}"
 export FIRESTORE_PROJECT_ID="${FIRESTORE_PROJECT_ID}"
 export GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS}"
 export LOG_LEVEL="${LOG_LEVEL}"
+echo "About to run sync worker..." >> /tmp/cron.log
 cd /app && node dist/index.js >> /tmp/cron.log 2>&1
-echo "\$(date '+%Y-%m-%d %H:%M:%S') - Cron job completed with exit code \$?" >> /tmp/cron.log
+EXIT_CODE=\$?
+echo "\$(date '+%Y-%m-%d %H:%M:%S') - Cron job COMPLETED with exit code \${EXIT_CODE}" >> /tmp/cron.log
+echo "===========================================" >> /tmp/cron.log
 EOF
   chmod +x /tmp/sync-cron.sh
-  echo "${SCHEDULE_CRON} /tmp/sync-cron.sh" > /etc/crontabs/root
-  crond -f -l 2 &
+  
+  # Write crontab and enable logging
+  echo "${SCHEDULE_CRON} /tmp/sync-cron.sh >> /tmp/cron-execution.log 2>&1" > /etc/crontabs/root
+  
+  # Start crond with verbose logging (level 0 = most verbose)
+  bashio::log.info "Starting crond with schedule: ${SCHEDULE_CRON}"
+  bashio::log.info "Cron will log to: /tmp/cron.log and /tmp/cron-execution.log"
+  crond -f -l 0 &
   while true; do
     sleep 300
     pgrep crond >/dev/null || crond -f -l 2 &

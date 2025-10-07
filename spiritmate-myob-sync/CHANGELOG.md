@@ -1,8 +1,15 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
-## 2.6.2
+## 2.6.3
 
 - Ready for future updates
+
+## 2.6.2
+
+- Added "Every 1 minute" and "Every 5 minutes" options for testing schedules
+- Enhanced cron logging with detailed execution timestamps and exit codes
+- Added separate cron daemon log to track if cron is attempting to execute
+- Increased crond verbosity to debug level for troubleshooting
 
 ## 2.6.1
 

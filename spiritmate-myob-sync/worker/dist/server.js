@@ -617,6 +617,8 @@ app.get('/', (_req, res) => {
         <div class="form-group">
           <label class="form-label" for="syncInterval">Sync Interval (minutes)</label>
           <select id="syncInterval">
+            <option value="1">Every 1 minute (testing only)</option>
+            <option value="5">Every 5 minutes</option>
             <option value="15">Every 15 minutes</option>
             <option value="30" selected>Every 30 minutes</option>
             <option value="60">Every hour</option>
@@ -1032,8 +1034,12 @@ app.get('/', (_req, res) => {
           addLog('Cron script error: ' + data.cron.cronScriptError);
         }
         if (data.cron.cronLog) {
-          addLog('--- CRON EXECUTION LOG ---');
+          addLog('--- CRON WORKER LOG ---');
           addLog(data.cron.cronLog);
+        }
+        if (data.cron.cronExecutionLog) {
+          addLog('--- CRON DAEMON LOG ---');
+          addLog(data.cron.cronExecutionLog);
         }
         if (data.cron.crondProcess) {
           addLog('Crond Process: ' + data.cron.crondProcess);
@@ -1296,6 +1302,14 @@ app.get('/api/diagnostics', async (_req, res) => {
         }
         catch (e) {
             diagnostics.cron.cronLogError = 'Cannot read cron log: ' + String(e);
+        }
+        // Read cron execution log (stderr/stdout from cron daemon)
+        try {
+            const cronExecLog = execSync('tail -100 /tmp/cron-execution.log 2>/dev/null || echo "No cron execution log yet"', { encoding: 'utf-8' });
+            diagnostics.cron.cronExecutionLog = cronExecLog;
+        }
+        catch (e) {
+            diagnostics.cron.cronExecutionLogError = String(e);
         }
         // Check crond log level
         try {
