@@ -26,6 +26,8 @@ LOG_LEVEL=$(bashio::config 'log_level')
 
 # Set timezone
 export TZ="${TIMEZONE}"
+# Also persist TZ for BusyBox utilities (crond reads /etc/TZ)
+echo -n "${TZ}" > /etc/TZ
 
 # Validate required configuration
 if bashio::var.is_empty "${IMAP_HOST}" || \

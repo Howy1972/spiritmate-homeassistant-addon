@@ -1,5 +1,9 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 2.6.10
+
+- Version bump to publish latest cron fixes and timezone persistence so HA detects update
+
 ## 2.6.9
 
 - **FIXED**: Ensure BusyBox `crond` loads the crontab by setting strict
@@ -10,6 +14,8 @@
   execution logging (`crond -l 8 -L /tmp/cron-execution.log -c /etc/crontabs`)
 - **ADDED**: Dedicated cron daemon execution log at `/tmp/cron-execution.log`
   to aid diagnostics alongside `/tmp/cron.log`
+- **FIXED**: Persist timezone to `/etc/TZ` so BusyBox crond evaluates
+  schedules in the configured timezone
 
 ## 2.6.6
 
