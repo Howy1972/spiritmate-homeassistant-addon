@@ -124,15 +124,12 @@ EOF
   bashio::log.info "Running test sync..."
   /tmp/sync-cron.sh &
   
-  # Start crond and keep service alive
-  bashio::log.info "Starting crond..."
+  # Start crond in foreground as the main service process (single instance)
+  bashio::log.info "Starting crond (foreground)..."
   # Kill any existing instance to avoid duplicates
   pkill crond >/dev/null 2>&1 || true
   # Explicitly point to crontab dir and enable logfile for diagnostics
-  crond -l 8 -L /tmp/cron-execution.log -c /etc/crontabs &
-  
-  # Keep service running
-  while true; do sleep 3600; done
+  exec crond -f -l 8 -L /tmp/cron-execution.log -c /etc/crontabs
 else
   bashio::log.info "Schedule disabled. UI is available; you can trigger runs from the panel. Running worker once now and keeping service alive."
   node /app/dist/index.js || bashio::log.warning "Initial run exited with code $?"
