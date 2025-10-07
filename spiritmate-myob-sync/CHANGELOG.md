@@ -1,5 +1,9 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
+## 2.5.8
+
+- Ready for future updates
+
 ## 2.5.7
 
 - **FIXED**: Cron schedule generation excluding the end hour (e.g., 10 PM sync was missing from schedule)
