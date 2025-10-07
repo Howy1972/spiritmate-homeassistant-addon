@@ -8,6 +8,11 @@
 
 ## 2.6.7
 
+- **FIXED**: Removed SHELL and TZ from crontab (BusyBox cron doesn't support env vars in crontab)
+- Simplified cron startup - background crond with monitoring loop
+
+## 2.6.8
+
 - Ready for future updates
 
 ## 2.6.5
