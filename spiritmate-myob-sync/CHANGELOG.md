@@ -1,6 +1,10 @@
 <!-- https://developers.home-assistant.io/docs/add-ons/presentation#keeping-a-changelog -->
 
-## 2.6.3
+## 2.6.5
+
+- Ready for future updates
+
+## 2.6.4
 
 - **FIXED**: Cron daemon not executing scheduled jobs (timezone not being set in crontab, multiple crond instances)
 - Added TZ variable directly to crontab for BusyBox cron compatibility
@@ -8,7 +12,7 @@
 - Use exec for crond to prevent duplicate processes
 - Enhanced startup logging to show crontab contents
 
-## 2.6.2
+## 2.6.3
 
 - Added "Every 1 minute" and "Every 5 minutes" options for testing schedules
 - Enhanced cron logging with detailed execution timestamps and exit codes
