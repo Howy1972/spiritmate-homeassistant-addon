@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
 name: SpiritMate MYOB Sync
-version: "3.0.1"
+version: "3.0.2"
 slug: spiritmate_myob_sync
 description: "Sync MYOB invoice emails to SpiritMate inventory (Firestore) with IMAP parsing and scheduled runs"
 url: "https://github.com/Howy1972/spiritmate-homeassistant-addon"
@@ -41,3 +41,5 @@ ingress_port: 8099
 panel_icon: mdi:cloud-sync
 hassio_api: true
 hassio_role: default
+ports:
+  8099/tcp: 8099
