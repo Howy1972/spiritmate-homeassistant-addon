@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
 name: SpiritMate MYOB Sync
-version: "3.0.5"
+version: "3.0.6"
 slug: spiritmate_myob_sync
 description: "Sync MYOB invoice emails to SpiritMate inventory (Firestore) with IMAP parsing and scheduled runs"
 url: "https://github.com/Howy1972/spiritmate-homeassistant-addon"
@@ -23,6 +23,7 @@ options:
   subject_prefix: ""
   label_processed: ""
   firestore_project_id: ""
+  loop_interval: 60
   log_level: "info"
 schema:
   imap_host: str
@@ -34,6 +35,7 @@ schema:
   subject_prefix: str
   label_processed: str?
   firestore_project_id: str
+  loop_interval: int
   log_level: list(debug|info|warning|error)
 # Build locally (no prebuilt image)
 ingress: true

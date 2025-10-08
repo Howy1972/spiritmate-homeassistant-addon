@@ -16,6 +16,7 @@ LABEL_PROCESSED=$(bashio::config 'label_processed')
 
 FIRESTORE_PROJECT_ID=$(bashio::config 'firestore_project_id')
 LOG_LEVEL=$(bashio::config 'log_level')
+LOOP_INTERVAL_OPT=$(bashio::config 'loop_interval')
 
 # No user-configurable timezone; cron runs every minute so TZ is irrelevant
 
@@ -61,8 +62,8 @@ bashio::log.info "Schedule: every 1 minute (fixed)"
 PORT=8099 node /app/dist/server.js &
   
   # Deterministic loop: run worker every 60 seconds (no cron)
-  bashio::log.info "Starting 60s worker loop (no cron)..."
-  LOOP_INTERVAL=${LOOP_INTERVAL:-60}
+  LOOP_INTERVAL=${LOOP_INTERVAL_OPT:-${LOOP_INTERVAL:-60}}
+  bashio::log.info "Starting worker loop every ${LOOP_INTERVAL}s (no cron)..."
   while true; do
     echo "===========================================" >> /tmp/cron.log
     echo "$(date '+%Y-%m-%d %H:%M:%S %Z') - Loop STARTED" >> /tmp/cron.log
