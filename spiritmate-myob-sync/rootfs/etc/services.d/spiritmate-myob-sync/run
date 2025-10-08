@@ -72,6 +72,6 @@ PORT=8099 node /app/dist/server.js &
     EXIT_CODE=$?
     echo "$(date '+%Y-%m-%d %H:%M:%S %Z') - Loop COMPLETED with exit code ${EXIT_CODE}" >> /tmp/cron.log
     echo "===========================================" >> /tmp/cron.log
-    sleep 240
+    sleep 7200
   done
   
